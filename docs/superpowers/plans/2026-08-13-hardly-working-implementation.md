@@ -12,7 +12,8 @@
 
 - **macOS 14.0 minimum** (`deploymentTarget`), requis par `MenuBarExtra` et `SMAppService`.
 - **Identifiant de paquet** : `com.madzar.hardlyworking`. **Nom produit affiché** : `Hardly Working`. **Nom de cible et de module** : `HardlyWorking` (sans espace).
-- **Équipe de signature** : `DEVELOPMENT_TEAM = X4857B4L79` (certificat *Apple Development* existant), `CODE_SIGN_STYLE = Automatic`.
+- **Équipe de signature** : `DEVELOPMENT_TEAM = 272BX4J7SG`, `CODE_SIGN_STYLE = Automatic`. Le certificat *Apple Development* valide (jusqu'au 24/03/2027) appartient à cette équipe.
+  > ⚠️ **Ne pas confondre les deux identifiants du certificat.** Son nom affiché est `Apple Development: c.madzar@hotmail.fr (X4857B4L79)`, mais `X4857B4L79` **n'est pas** le Team ID — c'est le champ `OU` du certificat qui l'est, soit `272BX4J7SG`. Une première version de ce plan utilisait la parenthèse et la construction échouait sur `No "Mac Development" signing certificate matching team ID "X4857B4L79"`. Pour retrouver la bonne valeur : `security find-certificate -a -c "Apple Development" -p | openssl x509 -noout -subject` et lire `OU =`.
 - **`LSUIElement = YES`** — app agent : aucune icône dans le Dock, aucune fenêtre principale.
 - **Toutes les chaînes visibles par l'utilisateur sont en anglais.**
 - **Jamais de clic.** `Jiggler` ne produit que des événements `.mouseMoved`, jamais de `mouseDown`/`mouseUp`.
@@ -177,7 +178,7 @@ settings:
   base:
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
-    DEVELOPMENT_TEAM: X4857B4L79
+    DEVELOPMENT_TEAM: 272BX4J7SG
     CODE_SIGN_STYLE: Automatic
     SWIFT_VERSION: "5.0"
 
@@ -275,7 +276,7 @@ xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -configuration
 
 Expected: `** BUILD SUCCEEDED **`, et `build/Build/Products/Release/Hardly Working.app` existe.
 
-Si `xcodebuild` se plaint de la configuration de la cible de test (`TEST_HOST` / `BUNDLE_LOADER`), ajouter sous `HardlyWorkingTests.settings.base` :
+**Confirmé nécessaire sur cette machine** (le `TEST_HOST` par défaut ne gère pas l'espace dans `Hardly Working`, d'où l'erreur « Could not find test host »). Ajouter sous `HardlyWorkingTests.settings.base` :
 ```yaml
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Hardly Working.app/Contents/MacOS/Hardly Working"
         BUNDLE_LOADER: "$(TEST_HOST)"
