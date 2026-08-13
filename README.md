@@ -8,7 +8,7 @@ Une petite app macOS en barre de statut qui empêche Teams (ou Slack, Discord…
 
 Teams s'appuie sur le compteur d'inactivité de macOS : le temps écoulé depuis votre dernière action clavier ou souris. Hardly Working consulte ce compteur toutes les 20 secondes et, dès qu'il dépasse le seuil choisi, déplace le curseur d'un pixel puis le remet exactement où il était — imperceptible, sans jamais cliquer, et sans aucune gêne si vous êtes en train d'utiliser la souris.
 
-Après chaque mouvement, l'app attend une fraction de seconde (le temps que macOS enregistre le geste) puis **vérifie que le compteur est bien retombé**. Un raté isolé ne déclenche rien : il faut **deux échecs consécutifs** pour que l'icône passe en alerte — un aléa ponctuel ne doit pas crier au loup. Une fois l'alerte levée, seul un mouvement qui réussit à nouveau à faire retomber le compteur peut l'effacer : décocher puis recocher « Active » ne suffit pas. L'app ne prétend jamais fonctionner quand ce n'est pas le cas.
+Après chaque mouvement, l'app attend une fraction de seconde (le temps que macOS enregistre le geste) puis **vérifie que le compteur est bien retombé**. Un raté isolé ne déclenche rien : il faut **deux échecs consécutifs** pour que l'icône passe en alerte — un aléa ponctuel ne doit pas crier au loup. Une fois l'alerte levée, seul un mouvement qui réussit à nouveau à faire retomber le compteur peut l'effacer — ou la perte puis le retour de la permission Accessibilité, qui réinitialise la détection puisque la cause de la panne devient alors connue : décocher puis recocher « Active » seul ne suffit pas. L'app ne prétend jamais fonctionner quand ce n'est pas le cas.
 
 ## Installation
 
@@ -43,7 +43,7 @@ Le triangle est le seul organe de sécurité du produit — il recouvre deux cau
 - **« Accessibility permission required »** → la permission n'a jamais été accordée (ou a été retirée). Cliquer sur « Open Accessibility Settings… » et cocher « Hardly Working » dans Réglages Système → Confidentialité et sécurité → Accessibilité.
 - **« Mouse nudge had no effect… »** → la permission est cochée mais les mouvements de souris n'ont eu aucun effet sur deux cycles consécutifs. Typiquement une permission révoquée silencieusement après une mise à jour macOS (retirer puis remettre la coche dans Réglages répare souvent ce cas), ou une restriction système (MDM, profil de configuration) qui bloque les événements souris synthétiques.
 
-Décocher puis recocher « Active » n'efface jamais l'alerte à lui seul : seul un mouvement qui réussit à nouveau à faire retomber le compteur d'inactivité la lève.
+Décocher puis recocher « Active » n'efface jamais l'alerte à lui seul : seul un mouvement qui réussit à nouveau à faire retomber le compteur d'inactivité la lève — ou la perte puis le retour de la permission Accessibilité (c'est justement le remède au deuxième cas ci-dessus), qui réinitialise la détection.
 
 ## Construire depuis les sources
 
