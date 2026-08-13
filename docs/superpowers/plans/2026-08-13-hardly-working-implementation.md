@@ -10,7 +10,8 @@
 
 ## Global Constraints
 
-- **macOS 14.0 minimum** (`deploymentTarget`), requis par `MenuBarExtra` et `SMAppService`.
+- **macOS 14.0 minimum** (`deploymentTarget`), requis par la forme à deux paramètres de `.onChange(of:) { ancienne, nouvelle in }` utilisée en tâche 6 — la forme à un paramètre est marquée obsolète à partir de 14.0.
+  > Correction d'audit : une version antérieure de ce plan justifiait ce plancher par `MenuBarExtra` et `SMAppService`. C'est faux — ces deux API sont disponibles dès **macOS 13.0** (vérifié dans `SwiftUI.swiftinterface` et l'en-tête `SMAppService.h`). Le plancher 14.0 reste le bon choix, mais pour cette raison-là. Si un jour on veut descendre à 13.0, c'est le `.onChange` à deux paramètres qu'il faudra remplacer, rien d'autre.
 - **Identifiant de paquet** : `com.madzar.hardlyworking`. **Nom produit affiché** : `Hardly Working`. **Nom de cible et de module** : `HardlyWorking` (sans espace).
 - **Équipe de signature** : `DEVELOPMENT_TEAM = 272BX4J7SG`, `CODE_SIGN_STYLE = Automatic`. Le certificat *Apple Development* valide (jusqu'au 24/03/2027) appartient à cette équipe.
   > ⚠️ **Ne pas confondre les deux identifiants du certificat.** Son nom affiché est `Apple Development: c.madzar@hotmail.fr (X4857B4L79)`, mais `X4857B4L79` **n'est pas** le Team ID — c'est le champ `OU` du certificat qui l'est, soit `272BX4J7SG`. Une première version de ce plan utilisait la parenthèse et la construction échouait sur `No "Mac Development" signing certificate matching team ID "X4857B4L79"`. Pour retrouver la bonne valeur : `security find-certificate -a -c "Apple Development" -p | openssl x509 -noout -subject` et lire `OU =`.
@@ -1162,6 +1163,8 @@ Expected: l'app est présente dans `/Applications`.
 Run: `open "/Applications/Hardly Working.app"`
 
 Au premier lancement, l'app détecte l'absence de permission et affiche le bandeau d'alerte. Cliquer « Open Accessibility Settings… », puis **demander à Clément d'activer « Hardly Working » dans la liste** (une case à cocher — action humaine obligatoire, impossible à automatiser).
+
+**Point à confirmer ici** (seul moyen de trancher) : l'URL `x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility` a été auditée comme ouvrant bien le panneau *Confidentialité et sécurité*, mais l'ancrage précis sur la ligne **Accessibilité** n'a pas pu être garanti hors exécution réelle. Noter dans le rapport ce que le clic ouvre effectivement : le bon volet directement, ou seulement la page Confidentialité et sécurité à faire défiler. Si l'ancrage échoue, ce n'est pas bloquant (la permission reste accordable) — le signaler comme finding mineur, sans corriger dans cette tâche.
 
 Expected après activation : l'icône repasse à la tasse pleine et le bandeau d'alerte disparaît du menu.
 
