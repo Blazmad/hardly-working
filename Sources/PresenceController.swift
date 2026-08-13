@@ -31,6 +31,11 @@ final class PresenceController: ObservableObject {
 
     @Published private(set) var state: PresenceState = .paused
 
+    /// La boucle de surveillance tourne-t-elle réellement ? Exposé pour que les
+    /// tests puissent affirmer qu'un `refresh()` arme bien la minuterie — une
+    /// version qui oubliait de le faire est déjà passée inaperçue une fois.
+    var isRunning: Bool { timer != nil }
+
     private let idleMonitor: IdleMonitoring
     private let jiggler: Jiggling
     private let permission: PermissionChecking
@@ -115,8 +120,10 @@ final class PresenceController: ObservableObject {
         let idle = idleMonitor.idleSeconds()
         guard JiggleDecision.shouldJiggle(idleSeconds: idle,
                                           thresholdSeconds: settings.idleThresholdSeconds) else {
-            consecutiveFailures = 0
-            state = .active
+            // Pas de remise à zéro ici : une panne constatée pendant l'absence ne doit
+            // pas être blanchie par le simple retour de l'utilisateur. Seule une
+            // vérification réussie (plus bas) a le droit de l'effacer.
+            state = consecutiveFailures >= Self.failuresBeforeAlert ? .ineffective : .active
             return
         }
 

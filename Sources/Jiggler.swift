@@ -10,7 +10,7 @@ protocol Jiggling {
 /// Imperceptible à l'œil, et n'émet jamais de clic.
 struct MouseJiggler: Jiggling {
     func jiggle() {
-        let origin = CGEvent(source: nil)?.location ?? .zero
+        guard let origin = CGEvent(source: nil)?.location else { return }
         move(to: CGPoint(x: origin.x + 1, y: origin.y))
         move(to: origin)
     }
