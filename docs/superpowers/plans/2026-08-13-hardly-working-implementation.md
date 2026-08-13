@@ -890,6 +890,12 @@ final class PresenceController: ObservableObject {
 
     /// À appeler au lancement et à chaque changement de réglage.
     func refresh() {
+        // Une panne constatée ne doit PAS être blanchie par un simple changement
+        // de réglage : rien n'a prouvé qu'elle était résolue. On ne lève l'alerte
+        // que sur une vérification réussie.
+        let wasIneffective = (state == .ineffective)
+        let priorFailures = consecutiveFailures
+
         stop()
 
         guard settings.isEnabled else {
@@ -900,8 +906,16 @@ final class PresenceController: ObservableObject {
         // La boucle démarre MÊME sans permission : c'est elle qui détectera que
         // la permission a été accordée. Sans ça, l'utilisateur qui corrige la
         // permission dans les Réglages resterait bloqué jusqu'au redémarrage.
-        state = permission.isGranted ? .active : .needsPermission
-        consecutiveFailures = 0
+        if !permission.isGranted {
+            state = .needsPermission
+            consecutiveFailures = 0
+        } else if wasIneffective {
+            state = .ineffective
+            consecutiveFailures = priorFailures
+        } else {
+            state = .active
+            consecutiveFailures = 0
+        }
 
         // Mode .common : sans lui, la minuterie ne se déclenche pas pendant que
         // l'utilisateur garde le menu de la barre de statut ouvert.
@@ -1090,13 +1104,23 @@ struct HardlyWorkingApp: App {
         // Une seule instance de Settings, partagée entre le contrôleur et le menu.
         // Deux instances distinctes casseraient la réactivité de l'interface.
         let sharedSettings = Settings()
-        _settings = StateObject(wrappedValue: sharedSettings)
-        _controller = StateObject(wrappedValue: PresenceController(
+        let sharedController = PresenceController(
             idleMonitor: SystemIdleMonitor(),
             jiggler: MouseJiggler(),
             permission: AccessibilityPermission(),
             settings: sharedSettings
-        ))
+        )
+        _settings = StateObject(wrappedValue: sharedSettings)
+        _controller = StateObject(wrappedValue: sharedController)
+
+        // Démarrage immédiat, sur la référence locale (jamais via l'accesseur de
+        // @StateObject, qui n'est pas encore installé par SwiftUI à ce stade).
+        // C'est la ceinture ; le `.onAppear` sur l'icône est la bretelle. Le
+        // démarrage de la surveillance est trop critique pour ne dépendre que
+        // d'une hypothèse sur l'ordre de rendu de SwiftUI — hypothèse non
+        // documentée, qu'aucun compilateur ne vérifierait si elle changeait, et
+        // dont l'échec est précisément le bug qu'on vient de corriger.
+        sharedController.refresh()
     }
 
     var body: some Scene {
