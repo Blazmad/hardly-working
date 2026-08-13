@@ -22,7 +22,7 @@ final class PresenceController: ObservableObject {
     /// Mesuré sur la machine cible (`spikes/settling-time.swift`) : une relecture
     /// immédiate ne voit le mouvement que 2 fois sur 12 ; à partir de 5 ms, 12/12.
     /// 50 ms laisse une marge confortable tout en restant imperceptible.
-    static let defaultVerificationDelay: Duration = .milliseconds(50)
+    nonisolated static let defaultVerificationDelay: Duration = .milliseconds(50)
 
     /// Nombre d'échecs consécutifs avant de déclarer l'alerte. Un raté ponctuel
     /// de propagation ne doit jamais faire crier au loup : une alerte qu'on voit
