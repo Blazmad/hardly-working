@@ -53,6 +53,12 @@ final class PresenceController: ObservableObject {
 
     /// À appeler au lancement et à chaque changement de réglage.
     func refresh() {
+        // Une panne constatée ne doit PAS être blanchie par un simple changement
+        // de réglage : rien n'a prouvé qu'elle était résolue. On ne lève l'alerte
+        // que sur une vérification réussie.
+        let wasIneffective = (state == .ineffective)
+        let priorFailures = consecutiveFailures
+
         stop()
 
         guard settings.isEnabled else {
@@ -63,8 +69,16 @@ final class PresenceController: ObservableObject {
         // La boucle démarre MÊME sans permission : c'est elle qui détectera que
         // la permission a été accordée. Sans ça, l'utilisateur qui corrige la
         // permission dans les Réglages resterait bloqué jusqu'au redémarrage.
-        state = permission.isGranted ? .active : .needsPermission
-        consecutiveFailures = 0
+        if !permission.isGranted {
+            state = .needsPermission
+            consecutiveFailures = 0
+        } else if wasIneffective {
+            state = .ineffective
+            consecutiveFailures = priorFailures
+        } else {
+            state = .active
+            consecutiveFailures = 0
+        }
 
         // Mode .common : sans lui, la minuterie ne se déclenche pas pendant que
         // l'utilisateur garde le menu de la barre de statut ouvert.

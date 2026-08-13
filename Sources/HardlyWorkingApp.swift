@@ -13,13 +13,18 @@ struct HardlyWorkingApp: App {
         // Une seule instance de Settings, partagée entre le contrôleur et le menu.
         // Deux instances distinctes casseraient la réactivité de l'interface.
         let sharedSettings = Settings()
-        _settings = StateObject(wrappedValue: sharedSettings)
-        _controller = StateObject(wrappedValue: PresenceController(
+        let sharedController = PresenceController(
             idleMonitor: SystemIdleMonitor(),
             jiggler: MouseJiggler(),
             permission: AccessibilityPermission(),
             settings: sharedSettings
-        ))
+        )
+        _settings = StateObject(wrappedValue: sharedSettings)
+        _controller = StateObject(wrappedValue: sharedController)
+
+        // Démarrage immédiat, sur la référence locale (jamais via l'accesseur de
+        // @StateObject, qui n'est pas encore installé par SwiftUI à ce stade).
+        sharedController.refresh()
     }
 
     var body: some Scene {
