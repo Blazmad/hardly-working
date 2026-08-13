@@ -160,4 +160,51 @@ final class PresenceControllerTests: XCTestCase {
         XCTAssertEqual(controller.state, .paused,
                        "Après stop(), l'icône ne doit jamais afficher « actif » au-dessus d'une boucle morte.")
     }
+
+    func testAlarmSurvivesASettingsChange() async {
+        let settings = makeSettings()
+        let (controller, _, _) = makeController(idle: [300, 300, 300, 300], settings: settings)
+        await controller.tick()
+        await controller.tick()
+        XCTAssertEqual(controller.state, .ineffective)
+
+        settings.idleThresholdSeconds = 300   // l'utilisateur touche un réglage
+        controller.refresh()
+        XCTAssertEqual(controller.state, .ineffective,
+                       "Changer un réglage ne prouve pas que la panne est résolue.")
+        controller.stop()
+    }
+
+    func testAlarmSurvivesTurningTheAppOffAndOnAgain() async {
+        let settings = makeSettings()
+        let (controller, _, _) = makeController(idle: [300, 300, 300, 300], settings: settings)
+        await controller.tick()
+        await controller.tick()
+        XCTAssertEqual(controller.state, .ineffective)
+
+        settings.isEnabled = false
+        controller.refresh()
+        XCTAssertEqual(controller.state, .paused)
+
+        settings.isEnabled = true
+        controller.refresh()
+        XCTAssertEqual(controller.state, .ineffective,
+                       "Éteindre puis rallumer ne prouve pas que la panne est résolue.")
+        controller.stop()
+    }
+
+    func testAnIsolatedFailureAfterASuccessDoesNotRaiseTheAlarm() async {
+        // échec, échec -> alerte ; succès -> levée ET compteur remis à zéro ;
+        // un échec isolé ensuite ne doit donc PAS ré-alerter immédiatement.
+        let (controller, _, _) = makeController(idle: [300, 300, 300, 300, 300, 0, 300, 300],
+                                                settings: makeSettings())
+        await controller.tick()
+        await controller.tick()
+        XCTAssertEqual(controller.state, .ineffective)
+        await controller.tick()
+        XCTAssertEqual(controller.state, .active)
+        await controller.tick()
+        XCTAssertEqual(controller.state, .active,
+                       "Après un succès, le compteur repart de zéro : un échec isolé ne ré-alerte pas.")
+    }
 }
