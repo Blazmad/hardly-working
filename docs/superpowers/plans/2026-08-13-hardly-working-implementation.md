@@ -1104,6 +1104,15 @@ struct HardlyWorkingApp: App {
                      loginItem: loginItem)
         } label: {
             Image(systemName: iconName)
+                // ⚠️ Démarrage de la surveillance : il DOIT être déclenché ici, sur
+                // l'icône, et non depuis le menu. SwiftUI ne construit le contenu d'un
+                // MenuBarExtra qu'à l'ouverture du menu — accrocher le démarrage au menu
+                // donnerait une app qui ne surveille rien tant que l'utilisateur n'a pas
+                // cliqué sur l'icône. Or tout l'intérêt du produit est de fonctionner
+                // pendant qu'il est LOIN de sa machine. L'icône, elle, est rendue dès le
+                // lancement. (Défaut réellement observé avant correction : icône « en
+                // pause » au lancement, surveillance inactive jusqu'au premier clic.)
+                .onAppear { controller.refresh() }
         }
     }
 
