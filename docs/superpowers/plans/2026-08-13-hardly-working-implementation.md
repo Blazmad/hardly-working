@@ -645,7 +645,8 @@ Le cœur du produit, et l'endroit où se joue la correction majeure par rapport 
 - Consumes: `IdleMonitoring`, `Jiggling`, `PermissionChecking` (tâche 3), `Settings`, `JiggleDecision` (tâche 4).
 - Produces:
   - `enum PresenceState { case paused, active, needsPermission, ineffective }`
-  - `PresenceController` (classe `@MainActor ObservableObject`) avec `state: PresenceState` en lecture seule, et exactement trois méthodes publiques : `refresh()` (à appeler au lancement et après tout changement de réglage), `stop()` et `tick()`.
+  - `PresenceController` (classe `@MainActor ObservableObject`) avec `state: PresenceState` en lecture seule, et exactement trois méthodes publiques : `refresh()` (à appeler au lancement et après tout changement de réglage), `stop()` et `tick()` — cette dernière est **`async`** (elle attend que le système ait enregistré le mouvement avant de vérifier).
+  - Le délai de vérification est **injectable** (`verificationDelay:`) : la production utilise 50 ms, les tests `.zero`.
 
 - [ ] **Step 1: Écrire les tests qui échouent**
 
@@ -691,79 +692,128 @@ final class PresenceControllerTests: XCTestCase {
         return settings
     }
 
+    /// Renvoie le contrôleur ET ses doublures : sans référence sur elles, aucun
+    /// test ne pourrait vérifier COMBIEN de fois le compteur a été lu ni la souris
+    /// bougée — et une implémentation qui lirait une fois de trop passerait inaperçue.
     private func makeController(
         idle: [TimeInterval],
-        jiggler: SpyJiggler = SpyJiggler(),
         permissionGranted: Bool = true,
         settings: Settings
-    ) -> PresenceController {
-        PresenceController(
-            idleMonitor: FakeIdleMonitor(idle),
+    ) -> (controller: PresenceController, monitor: FakeIdleMonitor, jiggler: SpyJiggler) {
+        let monitor = FakeIdleMonitor(idle)
+        let jiggler = SpyJiggler()
+        let controller = PresenceController(
+            idleMonitor: monitor,
             jiggler: jiggler,
             permission: StubPermission(isGranted: permissionGranted),
-            settings: settings
+            settings: settings,
+            // Aucune attente en test : le délai d'installation ne concerne que
+            // le vrai système, et le fake répond instantanément.
+            verificationDelay: .zero
         )
+        return (controller, monitor, jiggler)
     }
 
-    func testDoesNotJiggleBelowThreshold() {
-        let jiggler = SpyJiggler()
-        let controller = makeController(idle: [100], jiggler: jiggler, settings: makeSettings())
-        controller.tick()
+    func testDoesNotJiggleBelowThreshold() async {
+        let (controller, monitor, jiggler) = makeController(idle: [100], settings: makeSettings())
+        await controller.tick()
         XCTAssertEqual(jiggler.jiggleCount, 0)
         XCTAssertEqual(controller.state, .active)
+        XCTAssertEqual(monitor.callCount, 1, "Sous le seuil : une seule lecture, pas de vérification.")
     }
 
-    func testJigglesAboveThresholdAndStaysActiveWhenCounterDrops() {
-        let jiggler = SpyJiggler()
+    func testJigglesAboveThresholdAndStaysActiveWhenCounterDrops() async {
         // 1re lecture : inactif depuis 300s → on bouge. 2e lecture (vérification) : 0s → succès.
-        let controller = makeController(idle: [300, 0], jiggler: jiggler, settings: makeSettings())
-        controller.tick()
+        let (controller, monitor, jiggler) = makeController(idle: [300, 0], settings: makeSettings())
+        await controller.tick()
         XCTAssertEqual(jiggler.jiggleCount, 1)
         XCTAssertEqual(controller.state, .active)
+        XCTAssertEqual(monitor.callCount, 2, "Exactement deux lectures : la décision, puis la vérification.")
     }
 
-    func testReportsIneffectiveWhenCounterDoesNotDrop() {
-        let jiggler = SpyJiggler()
-        // Le mouvement est émis mais le compteur ne bouge pas : panne silencieuse détectée.
-        let controller = makeController(idle: [300, 300], jiggler: jiggler, settings: makeSettings())
-        controller.tick()
+    func testFirstFailedVerificationDoesNotRaiseTheAlarmYet() async {
+        // Un seul échec peut être un simple raté de propagation : on ne crie pas au loup.
+        let (controller, _, jiggler) = makeController(idle: [300, 300], settings: makeSettings())
+        await controller.tick()
         XCTAssertEqual(jiggler.jiggleCount, 1)
+        XCTAssertEqual(controller.state, .active, "Un échec isolé ne doit pas déclencher l'alerte.")
+    }
+
+    func testTwoConsecutiveFailedVerificationsRaiseTheAlarm() async {
+        // Deux échecs d'affilée : là, c'est une vraie panne.
+        let (controller, _, jiggler) = makeController(idle: [300, 300, 300, 300], settings: makeSettings())
+        await controller.tick()
+        await controller.tick()
+        XCTAssertEqual(jiggler.jiggleCount, 2)
         XCTAssertEqual(controller.state, .ineffective)
     }
 
-    func testIneffectiveStateClearsOnNextSuccess() {
-        let jiggler = SpyJiggler()
-        // tick 1 : 300 puis 300 → ineffective. tick 2 : 300 puis 0 → retour à active.
-        let controller = makeController(idle: [300, 300, 300, 0], jiggler: jiggler, settings: makeSettings())
-        controller.tick()
+    func testAlarmClearsBecauseAJiggleSucceeded() async {
+        // ticks 1-2 : deux échecs → alerte. tick 3 : le mouvement fait effet → alerte levée.
+        let (controller, _, jiggler) = makeController(idle: [300, 300, 300, 300, 300, 0],
+                                                      settings: makeSettings())
+        await controller.tick()
+        await controller.tick()
         XCTAssertEqual(controller.state, .ineffective)
-        controller.tick()
+
+        await controller.tick()
         XCTAssertEqual(controller.state, .active, "Une alerte ne doit jamais rester collée après un succès.")
+        XCTAssertEqual(jiggler.jiggleCount, 3,
+                       "L'alerte doit se lever PARCE QU'un mouvement a réussi, pas parce que l'utilisateur est revenu.")
     }
 
-    func testPausedWhenDisabled() {
-        let jiggler = SpyJiggler()
-        let controller = makeController(idle: [300, 0], jiggler: jiggler, settings: makeSettings(enabled: false))
-        controller.tick()
+    func testPausedWhenDisabled() async {
+        let (controller, _, jiggler) = makeController(idle: [300, 0], settings: makeSettings(enabled: false))
+        await controller.tick()
         XCTAssertEqual(jiggler.jiggleCount, 0)
         XCTAssertEqual(controller.state, .paused)
     }
 
-    func testNeedsPermissionWhenNotGranted() {
-        let jiggler = SpyJiggler()
-        let controller = makeController(idle: [300, 0], jiggler: jiggler,
-                                        permissionGranted: false, settings: makeSettings())
-        controller.tick()
+    func testNeedsPermissionWhenNotGranted() async {
+        let (controller, _, jiggler) = makeController(idle: [300, 0],
+                                                      permissionGranted: false, settings: makeSettings())
+        await controller.tick()
         XCTAssertEqual(jiggler.jiggleCount, 0, "Sans permission, aucun mouvement ne doit être tenté.")
         XCTAssertEqual(controller.state, .needsPermission)
     }
 
-    func testRespectsCustomThreshold() {
-        let jiggler = SpyJiggler()
-        let controller = makeController(idle: [150, 0], jiggler: jiggler,
-                                        settings: makeSettings(threshold: 120))
-        controller.tick()
+    func testRespectsCustomThreshold() async {
+        let (controller, _, jiggler) = makeController(idle: [150, 0], settings: makeSettings(threshold: 120))
+        await controller.tick()
         XCTAssertEqual(jiggler.jiggleCount, 1, "150s dépasse un seuil réglé à 120s.")
+    }
+
+    // MARK: - refresh() et stop()
+
+    func testRefreshReportsPausedWhenDisabled() {
+        let (controller, _, _) = makeController(idle: [300, 0], settings: makeSettings(enabled: false))
+        controller.refresh()
+        XCTAssertEqual(controller.state, .paused)
+        controller.stop()
+    }
+
+    func testRefreshReportsNeedsPermissionWhenNotGranted() {
+        let (controller, _, _) = makeController(idle: [300, 0],
+                                                permissionGranted: false, settings: makeSettings())
+        controller.refresh()
+        XCTAssertEqual(controller.state, .needsPermission)
+        controller.stop()
+    }
+
+    func testRefreshReportsActiveWhenEnabledAndPermitted() {
+        let (controller, _, _) = makeController(idle: [300, 0], settings: makeSettings())
+        controller.refresh()
+        XCTAssertEqual(controller.state, .active)
+        controller.stop()
+    }
+
+    func testStopReportsPausedSoTheIconNeverLies() {
+        let (controller, _, _) = makeController(idle: [300, 0], settings: makeSettings())
+        controller.refresh()
+        XCTAssertEqual(controller.state, .active)
+        controller.stop()
+        XCTAssertEqual(controller.state, .paused,
+                       "Après stop(), l'icône ne doit jamais afficher « actif » au-dessus d'une boucle morte.")
     }
 }
 ```
@@ -799,7 +849,18 @@ enum PresenceState: Equatable {
 @MainActor
 final class PresenceController: ObservableObject {
     /// Fréquence de sondage. Volontairement non exposée dans l'interface.
-    static let checkInterval: TimeInterval = 20
+    private static let checkInterval: TimeInterval = 20
+
+    /// Temps laissé au système pour enregistrer le mouvement avant de vérifier.
+    /// Mesuré sur la machine cible (`spikes/settling-time.swift`) : une relecture
+    /// immédiate ne voit le mouvement que 2 fois sur 12 ; à partir de 5 ms, 12/12.
+    /// 50 ms laisse une marge confortable tout en restant imperceptible.
+    static let defaultVerificationDelay: Duration = .milliseconds(50)
+
+    /// Nombre d'échecs consécutifs avant de déclarer l'alerte. Un raté ponctuel
+    /// de propagation ne doit jamais faire crier au loup : une alerte qu'on voit
+    /// à tort est une alerte qu'on finit par ignorer.
+    private static let failuresBeforeAlert = 2
 
     @Published private(set) var state: PresenceState = .paused
 
@@ -807,16 +868,20 @@ final class PresenceController: ObservableObject {
     private let jiggler: Jiggling
     private let permission: PermissionChecking
     private let settings: Settings
+    private let verificationDelay: Duration
     private var timer: Timer?
+    private var consecutiveFailures = 0
 
     init(idleMonitor: IdleMonitoring,
          jiggler: Jiggling,
          permission: PermissionChecking,
-         settings: Settings) {
+         settings: Settings,
+         verificationDelay: Duration = PresenceController.defaultVerificationDelay) {
         self.idleMonitor = idleMonitor
         self.jiggler = jiggler
         self.permission = permission
         self.settings = settings
+        self.verificationDelay = verificationDelay
     }
 
     /// À appeler au lancement et à chaque changement de réglage.
@@ -827,31 +892,42 @@ final class PresenceController: ObservableObject {
             state = .paused
             return
         }
-        guard permission.isGranted else {
-            state = .needsPermission
-            return
-        }
 
-        state = .active
-        timer = Timer.scheduledTimer(withTimeInterval: Self.checkInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+        // La boucle démarre MÊME sans permission : c'est elle qui détectera que
+        // la permission a été accordée. Sans ça, l'utilisateur qui corrige la
+        // permission dans les Réglages resterait bloqué jusqu'au redémarrage.
+        state = permission.isGranted ? .active : .needsPermission
+        consecutiveFailures = 0
+
+        // Mode .common : sans lui, la minuterie ne se déclenche pas pendant que
+        // l'utilisateur garde le menu de la barre de statut ouvert.
+        let timer = Timer(timeInterval: Self.checkInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.tick() }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
+        consecutiveFailures = 0
+        // L'état suit l'arrêt : sinon un `stop()` laisserait l'icône afficher
+        // « actif » au-dessus d'une boucle morte — exactement le mensonge que
+        // tout ce mécanisme existe pour empêcher.
+        state = .paused
     }
 
     /// Un cycle de la boucle. Séparé de la minuterie pour être testable directement.
-    func tick() {
+    func tick() async {
         guard settings.isEnabled else {
             stop()
-            state = .paused
             return
         }
         guard permission.isGranted else {
-            stop()
+            // On ne coupe PAS la minuterie : elle est le seul moyen de repérer
+            // que la permission a été rendue.
+            consecutiveFailures = 0
             state = .needsPermission
             return
         }
@@ -859,19 +935,33 @@ final class PresenceController: ObservableObject {
         let idle = idleMonitor.idleSeconds()
         guard JiggleDecision.shouldJiggle(idleSeconds: idle,
                                           thresholdSeconds: settings.idleThresholdSeconds) else {
+            consecutiveFailures = 0
             state = .active
             return
         }
 
         jiggler.jiggle()
 
+        // Le compteur système met quelques millisecondes à refléter l'événement :
+        // relire tout de suite donnerait une fausse alerte 8 fois sur 10 (mesuré).
+        if verificationDelay > .zero {
+            try? await Task.sleep(for: verificationDelay)
+        }
+
         // Auto-vérification : sans elle, une panne serait totalement silencieuse.
         // L'état d'alerte est transitoire — il se lève dès qu'un mouvement réussit.
-        let afterJiggle = idleMonitor.idleSeconds()
-        state = afterJiggle >= TimeInterval(settings.idleThresholdSeconds) ? .ineffective : .active
+        if idleMonitor.idleSeconds() >= TimeInterval(settings.idleThresholdSeconds) {
+            consecutiveFailures += 1
+            state = consecutiveFailures >= Self.failuresBeforeAlert ? .ineffective : .active
+        } else {
+            consecutiveFailures = 0
+            state = .active
+        }
     }
 }
 ```
+
+> **Pourquoi cette conception a changé après la première rédaction du plan.** La version initiale relisait le compteur immédiatement après le mouvement et alertait au premier échec. Une mesure sur la machine cible (`spikes/settling-time.swift`, conservé dans le dépôt) a montré que la relecture immédiate ne voit le mouvement que **2 fois sur 12** : l'app aurait affiché l'alerte plus de 80 % du temps en fonctionnant parfaitement. Aucun test unitaire ne pouvait le détecter — les doublures se trouvent des deux côtés du mécanisme. D'où le délai d'installation **et** l'hystérésis.
 
 - [ ] **Step 4: Lancer les tests et vérifier qu'ils passent**
 
@@ -880,7 +970,7 @@ Run:
 xcodegen generate && xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -destination 'platform=macOS' -derivedDataPath build test
 ```
 
-Expected: `** TEST SUCCEEDED **`, 14 tests passants (4 + 3 + 7), sans avertissement.
+Expected: `** TEST SUCCEEDED **`, 20 tests passants (5 JiggleDecisionTests + 3 SettingsTests + 12 PresenceControllerTests), sans avertissement.
 
 - [ ] **Step 5: Commit**
 
