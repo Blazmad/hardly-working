@@ -890,12 +890,6 @@ final class PresenceController: ObservableObject {
 
     /// À appeler au lancement et à chaque changement de réglage.
     func refresh() {
-        // Une panne constatée ne doit PAS être blanchie par un simple changement
-        // de réglage : rien n'a prouvé qu'elle était résolue. On ne lève l'alerte
-        // que sur une vérification réussie.
-        let wasIneffective = (state == .ineffective)
-        let priorFailures = consecutiveFailures
-
         stop()
 
         guard settings.isEnabled else {
@@ -907,14 +901,16 @@ final class PresenceController: ObservableObject {
         // la permission a été accordée. Sans ça, l'utilisateur qui corrige la
         // permission dans les Réglages resterait bloqué jusqu'au redémarrage.
         if !permission.isGranted {
-            state = .needsPermission
             consecutiveFailures = 0
-        } else if wasIneffective {
+            state = .needsPermission
+        } else if consecutiveFailures >= Self.failuresBeforeAlert {
+            // Une panne constatée reste affichée tant qu'aucune vérification n'a
+            // réussi — y compris après un aller-retour sur l'interrupteur, qui est
+            // le premier réflexe devant une icône d'avertissement. Seul un mouvement
+            // qui fait réellement retomber le compteur blanchit l'alerte.
             state = .ineffective
-            consecutiveFailures = priorFailures
         } else {
             state = .active
-            consecutiveFailures = 0
         }
 
         // Mode .common : sans lui, la minuterie ne se déclenche pas pendant que
@@ -929,8 +925,11 @@ final class PresenceController: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
-        consecutiveFailures = 0
-        // L'état suit l'arrêt : sinon un `stop()` laisserait l'icône afficher
+        // `consecutiveFailures` n'est délibérément PAS remis à zéro ici : c'est la
+        // mémoire d'une panne constatée, et seule une vérification réussie (ou la
+        // perte de la permission) a le droit de la blanchir. L'effacer ici
+        // permettrait d'éteindre l'alerte en éteignant puis rallumant l'app.
+        // L'état, lui, suit l'arrêt : sinon un `stop()` laisserait l'icône afficher
         // « actif » au-dessus d'une boucle morte — exactement le mensonge que
         // tout ce mécanisme existe pour empêcher.
         state = .paused
