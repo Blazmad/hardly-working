@@ -1,8 +1,14 @@
-# Hardly Working
+<p align="center">
+  <img src="assets/icon-256.png" alt="Hardly Working" width="128" height="128">
+</p>
+
+<h1 align="center">Hardly Working</h1>
+
+<p align="center">
+  <em>Working hard, or hardly working?</em>
+</p>
 
 Une petite app macOS en barre de statut qui empêche Teams (ou Slack, Discord…) de vous afficher « away » quand vous vous éloignez de votre Mac.
-
-*Working hard, or hardly working?*
 
 ## Comment ça marche
 
