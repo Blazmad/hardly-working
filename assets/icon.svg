@@ -7,13 +7,17 @@
     </linearGradient>
     <linearGradient id="hw-porcelain" x1="0.2" y1="0" x2="0.8" y2="1">
       <stop offset="0" stop-color="#FFFCF7"/>
-      <stop offset="1" stop-color="#F6E6D3"/>
+      <stop offset="1" stop-color="#F3E0CA"/>
     </linearGradient>
   </defs>
 
   <!-- Fond. Icon Composer applique lui-même le masque arrondi ;
        le rx ci-dessous ne sert qu'à l'aperçu hors de l'outil. -->
   <rect width="1024" height="1024" rx="232" fill="url(#hw-ground)"/>
+
+  <!-- Ordre de dessin, du fond vers l'avant : vapeur, soucoupe, ombre,
+       anse, corps, café. La soucoupe DOIT passer avant la tasse, sinon
+       elle s'affiche par-dessus et la tasse semble flotter. -->
 
   <!-- Vapeur : trois volutes, hauteurs inégales pour éviter l'effet peigne -->
   <g fill="none" stroke="#FFF8EE" stroke-opacity="0.62" stroke-width="26" stroke-linecap="round">
@@ -22,19 +26,19 @@
     <path d="M 600 392 C 568 344 628 320 600 268 C 586 242 596 226 606 214"/>
   </g>
 
+  <!-- Soucoupe : légèrement bombée, sous la tasse -->
+  <path d="M 268 692 L 756 692 C 756 742 700 764 512 764 C 324 764 268 742 268 692 Z" fill="url(#hw-porcelain)"/>
+
+  <!-- Ombre de la tasse sur la soucoupe -->
+  <ellipse cx="512" cy="694" rx="164" ry="20" fill="#8F3F0E" fill-opacity="0.20"/>
+
   <!-- Anse -->
   <path d="M 668 486 A 86 86 0 1 1 668 622" fill="none" stroke="url(#hw-porcelain)" stroke-width="46" stroke-linecap="round"/>
 
-  <!-- Ombre portée de la tasse sur la soucoupe -->
-  <ellipse cx="512" cy="686" rx="176" ry="22" fill="#8F3F0E" fill-opacity="0.22"/>
+  <!-- Corps de la tasse : léger fuselage, base arrondie, posée sur la soucoupe -->
+  <path d="M 342 452 L 682 452 L 656 640 C 650 678 622 700 584 700 L 440 700 C 402 700 374 678 368 640 Z" fill="url(#hw-porcelain)"/>
 
-  <!-- Corps de la tasse : léger fuselage, base arrondie -->
-  <path d="M 342 452 L 682 452 L 656 626 C 650 664 622 686 584 686 L 440 686 C 402 686 374 664 368 626 Z" fill="url(#hw-porcelain)"/>
-
-  <!-- Liseré de café visible en haut de la tasse -->
+  <!-- Café visible en haut de la tasse : c'est lui qui donne la lisibilité en petit -->
   <ellipse cx="512" cy="452" rx="170" ry="30" fill="#FFFCF7"/>
   <ellipse cx="512" cy="454" rx="132" ry="20" fill="#6B3410"/>
-
-  <!-- Soucoupe -->
-  <rect x="252" y="710" width="520" height="46" rx="23" fill="url(#hw-porcelain)"/>
 </svg>
