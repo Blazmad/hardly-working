@@ -1,0 +1,54 @@
+name: HardlyWorking
+options:
+  bundleIdPrefix: com.madzar
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: X4857B4L79
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+
+targets:
+  HardlyWorking:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.madzar.hardlyworking
+        PRODUCT_NAME: Hardly Working
+        PRODUCT_MODULE_NAME: HardlyWorking
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+
+  HardlyWorkingTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: HardlyWorking
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Hardly Working.app/Contents/MacOS/Hardly Working"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  HardlyWorking:
+    build:
+      targets:
+        HardlyWorking: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - HardlyWorkingTests
