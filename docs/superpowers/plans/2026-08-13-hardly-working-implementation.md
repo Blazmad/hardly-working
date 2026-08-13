@@ -45,7 +45,8 @@ Code/hardly-working/
 │   ├── SettingsTests.swift
 │   └── PresenceControllerTests.swift
 ├── spikes/
-│   └── idle-check.swift               # preuve des 2 hypothèses bloquantes
+│   ├── idle-check.swift               # preuve des 2 hypothèses bloquantes
+│   └── settling-time.swift            # mesure du délai avant qu'un mouvement soit visible
 ├── scripts/
 │   └── build-dmg.sh
 └── README.md
