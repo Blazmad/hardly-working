@@ -1,0 +1,414 @@
+<title>Hardly Working — your green dot doesn't need you</title>
+<meta name="description" content="A tiny macOS menu bar app that keeps your Teams, Slack or Discord status green while you're somewhere else.">
+<style>
+  :root {
+    --amber:       #D8792E;
+    --amber-deep:  #B4541A;
+    --amber-soft:  rgba(216,121,46,.12);
+    --ink:         #1E1813;
+    --ink-soft:    #6E6259;
+    --ink-faint:   #9C9089;
+    --ground:      #FDFBF8;
+    --ground-low:  #F7EDE1;
+    --panel:       #FFFFFF;
+    --line:        #EADFD2;
+    --green:       #30D158;
+
+    --glass-fill:  rgba(255,255,255,.62);
+    --glass-line:  rgba(255,255,255,.9);
+    --glass-edge:  rgba(120,90,60,.16);
+    --glass-shade: 0 30px 70px -20px rgba(90,60,30,.34), 0 6px 18px -8px rgba(90,60,30,.2);
+
+    --display: ui-serif, "New York", Iowan Old Style, Palatino, Georgia, serif;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+    /* Le symbole système exact affiché par l'app (cup.and.saucer.fill),
+       exporté depuis macOS plutôt que redessiné à la main. */
+    --cup-glyph: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAAAXNSR0IArs4c6QAAAGxlWElmTU0AKgAAAAgABAEaAAUAAAABAAAAPgEbAAUAAAABAAAARgEoAAMAAAABAAIAAIdpAAQAAAABAAAATgAAAAAAAAEgAAAAAQAAASAAAAABAAKgAgAEAAAAAQAAAEigAwAEAAAAAQAAAEgAAAAA8srtNAAAAAlwSFlzAAAsSwAALEsBpT2WqQAAC7NJREFUeAHtWntwXFUZP+fs3UfaPEqa7G7T3bzIlKappbQDDshoYbDViiNax1FAHayOj9HpH9ri+BhQBEFH5e0wooMDA8iMFBRbZaikoKMghVqaNrFJm27TdDcJTZNN9nnvOf6+Tba9pN2bfSUtM/ebfLlnz+P7zvnd7zvnO+cexmyyEbARsBGwEbARsBGwEbARsBGwEbARsBGwEbAReG8hwOe7u21tbW5nYqyRc80vhVHPpKhGJxYwrlxKKcE5N5hSKc5ZlCs+Lh1siHFxwnfkxPFOxvT57u9cA8Q7Gv3tkqurGONrmJIr8QxikC6wY5oFnsRE1B+VSTEm8SQ2wARMHHwEoO2TQr2ppR2v7h8cPIa8OaU5AaijtaHR0I0bIfzj6H0zuALsBhMwGrhYSqNhCpzIsFL7YGnPO5jnmbdDodFihVq1KytAKxsagrpmbIXQG6C0BrwQTJYyV0SATYBHuGKPpdzpB3t7T46XU1nZAFrR5L1JKX47OrcETMDMJHKVI/CfA0KxEJ5hOFZEKH4Kk06SM5WQXOhcSpdg3MM4d8MlazH/+FHXB89rVUyt4IwHZgrGb3LLKPiQZGpLT2jon+eoU1RWWQBqb/Tfij5uRQ9qwWdkAggMdAcm3d1Sc7zF9FRUGa7UAldMj7s1Y3LSo3s8Hul2u5XH06Wq9jAVXct4ItHBk8kkr4nFHBNVKYcrvkCLp1Ka0NIAT6vlDnaFUuwaKPoI9C02jZxeQhhofb07FPmzKb/o5JnBFClieZN3EybO36I5uVSW9gCw+5yG82XlcExGhYj39/cnUUhvulQSgUDADWUVaZFeBP+leW4LuMUk+DgsbcOBULjLlFdUsiSAmpubPRUyfhCam6e1SyDwA1VhPLikZyTeOQ/L8tq1zDkZXloN7/wZbPdL0/3Aq1A7Dx4b2nj6d5GJkgBaHvRuQNyyE7ozcvDv7pSr6vbe3l6ylnklWFVFtUj/AS+ILIpIF0IGu/qHw1M/i/ufjT+Kag0zXoGGp0EWuuPh8wEOdX5gYCCuOH/ENBDNkOLyjo4OCi2KplJiEgrvFppnlbQbEfF5JCz1C8yTHN7c0zI6Emtv9O2Fyz0rF8gnenpGaLXLm0qyoJlahDRuR15ZZc7Ukev3JZfUVSEM2DajnF5YHfgarKa/FHHHv7GoXDmjjuXP8g5GsU/jbT25ssWLuGX+aGXTknYR13ZA45ocWilY9YDbseJu72iuX52j3lnZ5QVoahuxyTD4m+1B3x3LGn2tZ2ksY0Z7U8Oa9ib/w4aSCAwVWca7xgN3+xPc7GXkU3xERPOlT0rx0HSa8izp9ARrWStHIUD4PlT+JEdxEvnYN6m96Oguh1SvOZRr/77jxwdy1J8tW6wMelsMwVZh3rsSUft67MMuRiPa4znP1RgR+yccKbbLcPIObHCfRp2W6XoQI9d1hYb/ca525rySJmklVAIma5ZnTlPHwfwq1LhCCq5LphtwwZMYYD/yBlF2AjJOZbYZTCSElDrmCpfCVkMxCZfgdajnx3MJgG6FGVShLbmLBnCo7++yGLNyShsOPt4VCU8i+cYlTf7NQqm/T9dxGIxfi/TcAsQli51Z5KdVn/2gARETYERVaBOEVdEftk5YX3AYBJAYlmnkkUTkAKmpNIGgCAhLMFB+Fjl09G+KZM/R8CvLG31DEOrNZHHePFVk/b8kC8IgBmlEBRINnACbe3IJc5BoQHE8q1TI0y8sm3XOZ8FvxSyFa6rf/PsCS+tdhwePZ/tERzFIN2Z/wyYj2bTVsySAko7qbginA6wLkXrQqczqRdsQqcnf4DdZb4bg0HkdiZxukG1Y6BN+/TqEXF5ou3mo/yIm/V8pLtZggvsy9LVkdWJaGHIlWeu+SIQmcEsqaQ4iyZhKX8SceiECtF4Ksf5co8eC8J19kaFZwaG2JbkYCUDQ9Rw93yMEl+O3HgwNPZ5vf0t2MVK0POjbC0u6NF+l56EerWA78I3kzgMDkdcK0V+Ui2Ev4zekY0N3KPx7UsYFewBu9mghiue0Lmd3cqkGEJyOI6I6ocWM/3QND9PhfsFUkAWtutjnTaf5jxC43QJNbhxIXYYDqb3rENlGmvxdCPmWFdyDsjdQr8KFPlgusXkHbCuC3q8ZktNB+AfAU5anRP3w2MQz/ZiKvIsq+5B/E/h8kiGU+Mzw+AS2MVO0Dn1d2OJ93+Lqylvqayq/WXdR1RsjpyZOZctne85qQcsaGuo0zfgdlsbsUaZZJr4Vs+u6jkYyexws+fdD4DdQIW/gzcJKTOuIbe7oDg39GHJ4e6P3Zjx+ijRtLcyb2THsAL5SUR9+bs8eRt/VLMlyFWttvajGocntOcAhwXB19khHIECfe1hCVGxD3d1ISvo9j0QB4V/8oaG7SOeywOIGxB+/QHIp2AwOFdcAyCdjw97PIW05fqpsVcHh1p33Yb65mipaUJsh0nfR2S8+7ST0FP8s6tJKkYliLdqVqwiWw3YntdQXO3FQT5cjNIF+K1ZvoQBTBH8Ep4vvt6iTKcoJUHtwCeYa/oXZBFA53OqrxsTwt+gTTG84PCyk83pk/w2cpPI5pASUv4DPTDccPjw6Rvqd6egPYSGb8tDpwRnCvahnOR3kLKxbtPBODHxVHooyVeDX16XjlSFfoLmrq69vYuXY5DOxmip6ARQfkZnnfBkZAYX901H9FCznLnxB3fLOO7EkWY4c1zbjdd2NMnQ9L1qKcf51ZGxyIFftnABhxid08QEzb6JObVSpeLxpYfVb/4pGk1jhOuuqKnegAHMCC05LIqDyHYBZOfDITKqTaP28MoybuweGn0eeos2oR8a24RvdzwuVzZk4NDI2kXPjahUoTh0smbs4exry1N0xp7EaMdOW2r7Iyc6ByNto9ik6KFfK8XnESjdgpCSbXg6BlQXMDBqBQUyTPTEsRg3CSreDH+86Gj6APLYOS/jJpUv9Ok/fg4DwRsorlHBEZzVX5X6Tyxu9x9CZQKEKTfX7cFC41ZngL9ZGIsnOM5+hxfKAr4MuIKBzbRh9EMhUoh3dIcKOBQujUjip5FFAdBQ/ew2hvf6//sEelBNoGWCG6+s90iM+hhFkVysqKoL4dw+Gwvfkamh+a++q097kewrdoRWpRFKvYBD3pp36Ll2vTmGlo9ij4BVuHaylNxBwulyTLlfatRFIfhty1pbYOYnD+w9ZHd7nBqjR+2G80B3ogJUbFtK/fswRz6LBS6kke8NtGHGP0ykjQihN0zKcFabrOifG9xlO11/UpKoWQlsDX7weJkQrZEO2bilPHIb/t/tYhEDO+cJyAkSKEY0+BpDIt2cGW1RcCtHy3wc+AiuN4EBrEhepUnA3nG8pB/IqYXX0BYMCUNrfNYEt+4ryQmlUSf7J7oHwbquGlkopknanXc+ha1dBiMtK0HusbBQDv+1AKPLAbP3OucxTw9HRRLKuatEL2LXjdmrmal32081sci/UcnKlCFbS23B36KF8OmkJEAkYiUbj3kDzH1U6hkVHLcMqQ5ZUrnkpnz6Wow6tfuPwhH2Kq83Y0G7PV6ili80UgjvPK3Dh8ntodC3KqsF0e6IgGTNlzvFvirjpoOwEQodHJ5Tr13SPqBCdRQ2uo8V7KS4obEbjj0LZRWACCp+KLwiwyI1iU8wPYaJ/Ku1OPVHs9eCiAILyDLW11VY7k86N+Ai3Hv53NTLJqggockPiWV0YdUoliqtS4MQ0H8U08BK++e882J85f84El8UqKQkgs9JmXOj0qNhl2CHjCEGthjF1oNwHphCBmOYtAizLCGsyFkdPInNfaFBZzm43yDKIccEBrFgaDRKo1Iv4aj8+8u/RcINk/7GhPtQpG5k7VTahWUFtfn+9W2MtsLAmqWQQ0a8PCr2S8VqgghthiHVoi8G5kyul4TeBpaMOnfGQZURhDVEsDphg1TACuyFcaYmgbn9ac/ZLbcGR83UnMjtG+2kjYCNgI2AjYCNgI2AjYCNgI2AjYCNgI1B+BP4PmafZwT1+7yEAAAAASUVORK5CYII=);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --amber:      #E8944A;
+      --amber-deep: #C9702B;
+      --amber-soft: rgba(232,148,74,.16);
+      --ink:        #F4EDE5;
+      --ink-soft:   #A99C90;
+      --ink-faint:  #7C7168;
+      --ground:     #14110E;
+      --ground-low: #1D1814;
+      --panel:      #1C1815;
+      --line:       #2E2721;
+
+      --glass-fill:  rgba(60,50,42,.5);
+      --glass-line:  rgba(255,235,210,.16);
+      --glass-edge:  rgba(0,0,0,.5);
+      --glass-shade: 0 30px 70px -20px rgba(0,0,0,.7), 0 6px 18px -8px rgba(0,0,0,.5);
+      --cup-glyph: url(data:image/png;base64,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);
+    }
+  }
+  :root[data-theme="dark"] {
+    --amber:      #E8944A;
+    --amber-deep: #C9702B;
+    --amber-soft: rgba(232,148,74,.16);
+    --ink:        #F4EDE5;
+    --ink-soft:   #A99C90;
+    --ink-faint:  #7C7168;
+    --ground:     #14110E;
+    --ground-low: #1D1814;
+    --panel:      #1C1815;
+    --line:       #2E2721;
+
+    --glass-fill:  rgba(60,50,42,.5);
+    --glass-line:  rgba(255,235,210,.16);
+    --glass-edge:  rgba(0,0,0,.5);
+    --glass-shade: 0 30px 70px -20px rgba(0,0,0,.7), 0 6px 18px -8px rgba(0,0,0,.5);
+      --cup-glyph: url(data:image/png;base64,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);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Halo ambré très diffus derrière le héros : de l'atmosphère, pas un effet. */
+  .atmos {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(120% 70% at 50% -10%, var(--amber-soft) 0%, transparent 62%),
+      linear-gradient(to bottom, transparent 40%, var(--ground-low) 100%);
+  }
+
+  .page { position: relative; z-index: 1; }
+  .shell { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* ── Navigation ─────────────────────────────────────────── */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 26px 0 0;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 590; letter-spacing: -.01em; }
+  .brand svg { display: block; border-radius: 24%; }
+  .ghlink {
+    color: var(--ink-soft); text-decoration: none; font-size: 14.5px;
+    display: flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px;
+    border: 1px solid transparent; transition: color .2s, border-color .2s, background .2s;
+  }
+  .ghlink:hover { color: var(--ink); border-color: var(--line); background: var(--amber-soft); }
+  .ghlink:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+
+  /* ── Héros ──────────────────────────────────────────────── */
+  header { text-align: center; padding: 86px 0 0; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 560; letter-spacing: .045em; text-transform: uppercase;
+    color: var(--amber-deep); background: var(--amber-soft);
+    border: 1px solid color-mix(in srgb, var(--amber) 28%, transparent);
+    padding: 7px 15px; border-radius: 999px;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(42px, 7.6vw, 82px);
+    line-height: 1.03;
+    letter-spacing: -.032em;
+    font-weight: 600;
+    margin: 26px auto 0;
+    max-width: 15ch;
+    text-wrap: balance;
+  }
+  h1 .lit { color: var(--amber); font-style: italic; }
+
+  .lede {
+    color: var(--ink-soft);
+    font-size: clamp(17px, 2.1vw, 20px);
+    line-height: 1.55;
+    max-width: 46ch;
+    margin: 26px auto 0;
+    text-wrap: balance;
+  }
+
+  .cta-row { margin-top: 36px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .download {
+    display: inline-flex; align-items: baseline; gap: 11px;
+    background: var(--ink); color: var(--ground);
+    text-decoration: none; font-weight: 570; font-size: 16.5px;
+    padding: 15px 30px; border-radius: 999px;
+    transition: transform .18s cubic-bezier(.2,.8,.3,1), box-shadow .18s;
+    box-shadow: 0 12px 28px -12px rgba(90,60,30,.5);
+  }
+  .download:hover { transform: translateY(-2px); box-shadow: 0 18px 36px -14px rgba(90,60,30,.6); }
+  .download:focus-visible { outline: 2px solid var(--amber); outline-offset: 4px; }
+  .download .size { font-size: 13.5px; opacity: .62; font-variant-numeric: tabular-nums; }
+  .caveat { font-size: 13px; color: var(--ink-faint); max-width: 40ch; }
+
+  /* ── Le gag qui est aussi la démo ────────────────────────── */
+  .status { margin-top: 52px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 8px 17px 8px 14px; border-radius: 999px;
+    font-size: 14.5px; font-weight: 520;
+    box-shadow: 0 2px 10px -4px rgba(90,60,30,.18);
+  }
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 22%, transparent);
+  }
+  .away {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint);
+    font-variant-numeric: tabular-nums; letter-spacing: .01em;
+  }
+
+  /* ── Maquette en verre ──────────────────────────────────── */
+  .stage { margin-top: 58px; position: relative; padding-bottom: 0; }
+  .stage::before {
+    content: ""; position: absolute; left: 50%; top: 6%; transform: translateX(-50%);
+    width: 76%; height: 82%; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--amber-soft), transparent);
+    filter: blur(20px); z-index: 0;
+  }
+  .mock { position: relative; z-index: 1; max-width: 660px; margin: 0 auto; }
+
+  .menubar {
+    display: flex; align-items: center; justify-content: flex-end; gap: 16px;
+    height: 34px; padding: 0 16px;
+    border-radius: 13px 13px 0 0;
+    background: var(--glass-fill);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-edge); border-bottom: none;
+    box-shadow: inset 0 1px 0 var(--glass-line);
+    color: var(--ink); font-size: 13px;
+  }
+  .menubar .cupmark {
+    width: 18px; height: 18px;
+    background: var(--cup-glyph) center / contain no-repeat;
+  }
+  .menubar .clock { font-variant-numeric: tabular-nums; opacity: .72; font-size: 12.5px; }
+
+  .menu {
+    /* Ancré sous l'icône : un menu de barre de statut ne s'ouvre jamais au centre. */
+    margin: 8px 42px 0 auto; width: 292px;
+    background: var(--glass-fill);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--glass-edge);
+    border-radius: 13px;
+    box-shadow: var(--glass-shade), inset 0 1px 0 var(--glass-line);
+    padding: 7px; text-align: left;
+    font-size: 13.5px;
+  }
+  .mi {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 11px; border-radius: 7px; color: var(--ink);
+  }
+  .mi .k { display: flex; align-items: center; gap: 9px; }
+  .mi .v { color: var(--ink-faint); font-size: 12.5px; }
+  .sep { height: 1px; background: var(--glass-edge); margin: 6px 9px; }
+  .tick { width: 13px; display: inline-block; }
+
+  /* ── Sections ───────────────────────────────────────────── */
+  section { padding: 104px 0 0; }
+  .eyebrow {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 26px;
+  }
+
+  .args { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px; }
+  .arg h3 {
+    font-family: var(--display); font-size: 21px; line-height: 1.28; letter-spacing: -.015em;
+    font-weight: 600; margin: 0 0 11px; text-wrap: balance;
+  }
+  .arg p { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.6; }
+  .arg .num {
+    font-family: var(--mono); font-size: 11.5px; color: var(--amber);
+    display: block; margin-bottom: 13px; letter-spacing: .06em;
+  }
+
+  .honest {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 20px;
+    padding: 40px 42px; margin-top: 30px;
+  }
+  .honest h2 {
+    font-family: var(--display); font-size: clamp(25px, 3.4vw, 33px); letter-spacing: -.022em;
+    font-weight: 600; margin: 0 0 16px; text-wrap: balance;
+  }
+  .honest p { margin: 0 0 14px; color: var(--ink-soft); max-width: 64ch; }
+  .honest p:last-child { margin-bottom: 0; }
+  .honest kbd {
+    font-family: var(--mono); font-size: 12.5px; background: var(--amber-soft);
+    color: var(--amber-deep); padding: 2px 7px; border-radius: 5px; font-weight: 600;
+  }
+
+  footer {
+    margin-top: 104px; padding: 34px 0 56px; border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+    color: var(--ink-faint); font-size: 13.5px;
+  }
+  footer a { color: var(--ink-soft); text-decoration: none; }
+  footer a:hover { color: var(--amber); }
+  footer a:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+  .closing { font-family: var(--display); font-style: italic; color: var(--ink-soft); font-size: 15px; }
+
+  /* Entrée en scène, une seule fois, échelonnée. */
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .r { animation: rise .72s cubic-bezier(.2,.8,.3,1) both; }
+  .r2 { animation-delay: .07s; } .r3 { animation-delay: .14s; }
+  .r4 { animation-delay: .21s; } .r5 { animation-delay: .3s; } .r6 { animation-delay: .4s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r { animation: none; }
+    .download { transition: none; }
+  }
+
+  @media (max-width: 760px) {
+    .args { grid-template-columns: 1fr; gap: 38px; }
+    header { padding-top: 58px; }
+    .honest { padding: 30px 26px; }
+    section { padding-top: 78px; }
+  }
+</style>
+
+<div class="atmos"></div>
+
+<div class="page">
+<div class="shell">
+
+  <nav class="r">
+    <span class="brand">
+      <svg width="26" height="26" viewBox="0 0 1024 1024" aria-hidden="true">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0" stop-color="#F0A857"/><stop offset="1" stop-color="#B4541A"/>
+          </linearGradient>
+        </defs>
+        <rect width="1024" height="1024" rx="232" fill="url(#g)"/>
+        <path d="M 268 692 L 756 692 C 756 742 700 764 512 764 C 324 764 268 742 268 692 Z" fill="#FFFCF7"/>
+        <path d="M 668 486 A 86 86 0 1 1 668 622" fill="none" stroke="#FFFCF7" stroke-width="46" stroke-linecap="round"/>
+        <path d="M 342 452 L 682 452 L 656 640 C 650 678 622 700 584 700 L 440 700 C 402 700 374 678 368 640 Z" fill="#FFFCF7"/>
+        <ellipse cx="512" cy="454" rx="132" ry="20" fill="#6B3410"/>
+      </svg>
+      Hardly&nbsp;Working
+    </span>
+    <a class="ghlink" href="https://github.com/Blazmad/hardly-working">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38l-.01-1.49c-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48l-.01 2.19c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg>
+      GitHub
+    </a>
+  </nav>
+
+  <header>
+    <span class="badge r r2">For macOS 14 and later</span>
+
+    <h1 class="r r3">Your <span class="lit">green dot</span> doesn't need you.</h1>
+
+    <p class="lede r r4">
+      Hardly Working keeps your status green while you're somewhere else.
+      Entirely. Reliably. Quietly.
+    </p>
+
+    <div class="cta-row r r5">
+      <a class="download" href="https://github.com/Blazmad/hardly-working/releases">
+        Download for macOS <span class="size">1.4&nbsp;MB</span>
+      </a>
+      <p class="caveat">
+        Not notarized yet — macOS will ask you to allow it in System&nbsp;Settings.
+      </p>
+    </div>
+
+    <div class="status r r5">
+      <span class="pill"><span class="dot"></span> Available</span>
+      <span class="away">Away for <span id="mins">47</span> minutes</span>
+    </div>
+
+    <div class="stage r r6">
+      <div class="mock">
+        <div class="menubar">
+          <span class="cupmark" role="img" aria-label="Hardly Working, active"></span>
+          <span class="clock">14:32</span>
+        </div>
+
+        <div class="menu">
+          <div class="mi"><span class="k"><span class="tick">✓</span> Active</span></div>
+          <div class="sep"></div>
+          <div class="mi"><span class="k"><span class="tick"></span> Idle threshold</span><span class="v">4 min ›</span></div>
+          <div class="mi"><span class="k"><span class="tick"></span> Launch at login</span></div>
+          <div class="sep"></div>
+          <div class="mi"><span class="k"><span class="tick"></span> Quit Hardly Working</span><span class="v">⌘Q</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <p class="eyebrow">What it actually does</p>
+    <div class="args">
+      <div class="arg">
+        <span class="num">01</span>
+        <h3>It moves the cursor by one pixel. That's the entire crime.</h3>
+        <p>Nothing opens, nothing gets selected, nothing you'd have to explain.</p>
+      </div>
+      <div class="arg">
+        <span class="num">02</span>
+        <h3>It tells you when it stops working.</h3>
+        <p>Most jigglers just quietly die. You find out when someone asks where you were all afternoon.</p>
+      </div>
+      <div class="arg">
+        <span class="num">03</span>
+        <h3>It waits until you've actually left.</h3>
+        <p>While you're using your Mac, it does nothing at all. No cursor fighting, no jumping.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">The part nobody else mentions</p>
+    <div class="honest">
+      <h2>What we're not hiding from you</h2>
+      <p>
+        Your Mac decides to sleep by watching the same idle counter this app keeps resetting.
+        So while Hardly Working is active, <strong>your Mac won't fall asleep on its own</strong> —
+        and neither will your screen lock itself.
+      </p>
+      <p>
+        On a work machine that matters, precisely in the situation this app is built for.
+        Lock it yourself on the way out: <kbd>Ctrl</kbd> <kbd>⌘</kbd> <kbd>Q</kbd>,
+        or set a hot corner to lock the screen.
+      </p>
+      <p>
+        Every other jiggler does this too. We're just the ones telling you.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <span class="closing">A green dot has never proven anything.</span>
+    <span>
+      <a href="https://github.com/Blazmad/hardly-working">Source on GitHub</a>
+      &nbsp;·&nbsp; macOS 14+ &nbsp;·&nbsp; Apple&nbsp;Development signed
+    </span>
+  </footer>
+
+</div>
+</div>
+
+<script>
+  // Le compteur avance lentement : perceptible si on l'observe, invisible sinon.
+  // Figé si le visiteur a demandé moins d'animations.
+  (function () {
+    var el = document.getElementById('mins');
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var n = 47;
+    setInterval(function () { el.textContent = ++n; }, 8000);
+  })();
+</script>
