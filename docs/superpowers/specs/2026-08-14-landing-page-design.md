@@ -56,8 +56,6 @@ L'étendre à toute la page serait l'erreur classique — la page deviendrait du
 
 ### 2. Trois arguments
 
-Punchlines qui restent des affirmations vraies :
-
 Une vanne franche en ouverture, puis deux arguments qui rassurent. Chaque titre est suivi d'une ligne d'appui.
 
 | Titre | Ligne d'appui | Vérité qu'elle porte |
