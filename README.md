@@ -78,6 +78,10 @@ Le DMG actuel est signé avec un certificat *Apple Development*, valable localem
 
 Sans cela, un utilisateur qui télécharge le DMG devra passer par Réglages Système → Confidentialité et sécurité → « Ouvrir quand même » (le contournement clic-droit → Ouvrir a été supprimé dans macOS 15).
 
+## Licence
+
+[MIT](LICENSE) — faites-en ce que vous voulez, gardez la mention de copyright. Fourni sans aucune garantie.
+
 ## Historique
 
 Remplace [`teams-presence`](../teams-presence/), une première version en script bash. Cette v2 native supprime ses trois fragilités : dépendance à Homebrew (`cliclick`), permission Accessibilité cassée à chaque mise à jour, et contournement de la protection TCC du dossier `~/Documents`.
