@@ -50,6 +50,7 @@ L'étendre à toute la page serait l'erreur classique — la page deviendrait du
 - Titre : **`Your green dot doesn't need you.`** — « green dot » en ambre.
 - Sous-titre, deux lignes : `Hardly Working keeps your status green while you're somewhere else. Entirely. Reliably. Quietly.`
 - Bouton de téléchargement, avec le poids du fichier affiché (`1.4 MB`).
+- Sous le bouton, une ligne discrète tant que la notarisation n'est pas faite : `Not notarized yet — macOS will ask you to allow it in System Settings.` Se retire en une ligne le jour venu, et reste cohérente avec le bloc « ce qu'on ne te cache pas ».
 - **Gag visuel doublé d'une démo réelle** : une pastille `🟢 Available` qui ne change jamais, surmontant un compteur en chiffres tabulaires — `Away for 47 minutes` — dont les minutes s'incrémentent lentement. C'est exactement ce que fait le produit, montré plutôt que raconté.
 - Maquette de la barre de menus en verre, menu ouvert, dépassant par le bas du bloc (comme la référence).
 
@@ -57,11 +58,15 @@ L'étendre à toute la page serait l'erreur classique — la page deviendrait du
 
 Punchlines qui restent des affirmations vraies :
 
-| Punchline | Vérité qu'elle porte |
-|---|---|
-| *It moves the cursor by one pixel. That's the entire crime.* | jamais de clic, mouvement imperceptible |
-| *It checks that the lie landed.* | l'auto-vérification après chaque mouvement |
-| *1.4 MB. Lighter than the meeting you're avoiding.* | aucune dépendance, app minuscule |
+Une vanne franche en ouverture, puis deux arguments qui rassurent. Chaque titre est suivi d'une ligne d'appui.
+
+| Titre | Ligne d'appui | Vérité qu'elle porte |
+|---|---|---|
+| *It moves the cursor by one pixel. That's the entire crime.* | Nothing opens, nothing gets selected, nothing you'd have to explain. | jamais de clic, mouvement imperceptible |
+| *It tells you when it stops working.* | Most jigglers just quietly die. You find out when someone asks where you were all afternoon. | l'auto-vérification — **le seul vrai avantage sur la concurrence** |
+| *It waits until you've actually left.* | While you're using your Mac, it does nothing at all. No cursor fighting, no jumping. | aucune interférence en usage réel |
+
+> **Révision après relecture de Clément.** Deux des punchlines initiales décrivaient un mécanisme interne (« it checks that the lie landed ») ou une fierté d'ingénieur (le poids du fichier) : personne ne s'en soucie. Elles ont été remplacées par ce qui inquiète réellement quelqu'un qui envisage cet outil — *est-ce que ça va me griller*, *est-ce que ça marche vraiment*, *est-ce que ça va me gêner quand je travaille*. La deuxième ne décrit plus le mécanisme mais **la catastrophe qu'il évite**, ce qui est à la fois plus drôle et plus vendeur.
 
 ### 3. Ce qu'on ne te cache pas
 
