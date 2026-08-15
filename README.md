@@ -74,9 +74,8 @@ Les tests couvrent la logique pure (seuil, réglages, machine à états, auto-v�
 
 ## Distribution
 
-Le DMG actuel est signé avec un certificat *Apple Development*, valable localement. Pour une distribution publique sans avertissement de sécurité, il faut un certificat *Developer ID* et la notarisation Apple — donc l'Apple Developer Program (99 €/an). Les commandes correspondantes sont déjà en commentaire dans `scripts/build-dmg.sh` : rien d'autre ne change.
+Le DMG est signé avec un certificat *Developer ID* et **notarisé par Apple** : il s'installe sans aucun avertissement de sécurité. `scripts/build-dmg.sh` s'en charge automatiquement si le certificat et le profil de notarisation sont présents sur la machine.
 
-Sans cela, un utilisateur qui télécharge le DMG devra passer par Réglages Système → Confidentialité et sécurité → « Ouvrir quand même » (le contournement clic-droit → Ouvrir a été supprimé dans macOS 15).
 
 ## Historique
 
