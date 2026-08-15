@@ -51,6 +51,22 @@ Le triangle est le seul organe de sécurité du produit — il recouvre deux cau
 
 Décocher puis recocher « Active » n'efface jamais l'alerte à lui seul : seul un mouvement qui réussit à nouveau à faire retomber le compteur d'inactivité la lève — ou la perte puis le retour de la permission Accessibilité (c'est justement le remède au deuxième cas ci-dessus), qui réinitialise la détection.
 
+### Cas particulier : l'app est cochée dans les Réglages, mais le triangle persiste
+
+Symptôme déroutant : « Hardly Working » figure bien dans Réglages Système → Confidentialité et sécurité → Accessibilité, la case est cochée, et pourtant l'app affiche l'alerte. Décocher puis recocher ne change rien.
+
+Cause : macOS n'enregistre pas seulement « cette app est autorisée », il enregistre **l'empreinte cryptographique** de l'app autorisée. Si la signature de l'app a changé depuis (nouveau certificat, par exemple), l'entrée conserve le même nom et la même case cochée, mais **ne correspond plus au binaire installé**. La case ne fait que basculer un interrupteur sur un enregistrement périmé.
+
+Correctif — supprimer l'entrée pour qu'une neuve soit créée :
+
+```bash
+tccutil reset Accessibility com.madzar.hardlyworking
+```
+
+Puis relancer l'app et réaccorder la permission. (Équivalent manuel : sélectionner l'entrée dans la liste et cliquer le bouton `−`, plutôt que de décocher la case.)
+
+Ce cas ne se produit qu'après un changement de signature. En usage normal, la permission n'a jamais à être réaccordée, y compris lors des mises à jour.
+
 ## Construire depuis les sources
 
 Nécessite Xcode et XcodeGen (`brew install xcodegen`).
