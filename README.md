@@ -8,76 +8,87 @@
   <em>Working hard, or hardly working?</em>
 </p>
 
-Une petite app macOS en barre de statut qui empêche Teams (ou Slack, Discord…) de vous afficher « away » quand vous vous éloignez de votre Mac.
+A small macOS menu bar app that stops Teams (or Slack, Discord…) from marking you "away" when you step away from your Mac.
 
-## Comment ça marche
+**[Download for macOS →](https://blazmad.github.io/hardly-working/)**
 
-Teams s'appuie sur le compteur d'inactivité de macOS : le temps écoulé depuis votre dernière action clavier ou souris. Hardly Working consulte ce compteur toutes les 20 secondes et, dès qu'il dépasse le seuil choisi, déplace le curseur d'un pixel puis le remet exactement où il était — imperceptible, sans jamais cliquer, et sans aucune gêne si vous êtes en train d'utiliser la souris.
+## How it works
 
-Après chaque mouvement, l'app attend une fraction de seconde (le temps que macOS enregistre le geste) puis **vérifie que le compteur est bien retombé**. Un raté isolé ne déclenche rien : il faut **deux échecs consécutifs** pour que l'icône passe en alerte — un aléa ponctuel ne doit pas crier au loup. Une fois l'alerte levée, seul un mouvement qui réussit à nouveau à faire retomber le compteur peut l'effacer — ou la perte puis le retour de la permission Accessibilité, qui réinitialise la détection puisque la cause de la panne devient alors connue : décocher puis recocher « Active » seul ne suffit pas. L'app ne prétend jamais fonctionner quand ce n'est pas le cas.
+Teams reads the macOS idle timer: the time since your last keyboard or mouse input. Hardly Working checks that same timer every 20 seconds and, as soon as it passes your chosen threshold, moves the cursor by one pixel and puts it straight back — imperceptible, never a click, and no interference at all if you happen to be using the mouse.
+
+After each nudge the app waits a fraction of a second, long enough for macOS to register the event, then **checks that the timer actually dropped**. A single miss triggers nothing: it takes **two consecutive failures** before the icon switches to its alert state, because an isolated hiccup shouldn't cry wolf. Once the alert is up, only a nudge that succeeds in resetting the timer clears it — or losing and regaining the Accessibility permission, which resets the detection because the cause of the failure is then known. Unchecking and re-checking "Active" on its own will not clear it. The app never claims to be working when it isn't.
 
 ## Installation
 
-1. Ouvrir `Hardly Working.dmg` et glisser l'app dans Applications.
-2. Lancer l'app — une icône de tasse apparaît dans la barre de menus.
-3. **Accorder la permission Accessibilité** (obligatoire) : au premier lancement, l'app n'a pas encore cette permission, donc l'icône passe directement en triangle d'alerte — elle n'ouvre rien toute seule. Cliquer sur l'icône puis sur « Open Accessibility Settings… » dans le menu : cela déclenche la demande système puis ouvre Réglages Système → Confidentialité et sécurité. L'ancrage exact sur la ligne « Accessibilité » n'est pas garanti selon la version de macOS ; il peut falloir faire défiler la page. Cocher « Hardly Working ». Sans cette permission, macOS interdit tout mouvement de souris synthétique.
+1. Open `Hardly Working.dmg` and drag the app into Applications.
+2. Launch the app — a cup icon appears in your menu bar.
+3. **Grant the Accessibility permission** (required). On first launch the app doesn't have it yet, so the icon goes straight to the alert triangle — it won't open anything on its own. Click the icon, then "Open Accessibility Settings…" in the menu: that triggers the system prompt and opens System Settings → Privacy & Security. Landing exactly on the "Accessibility" row isn't guaranteed across macOS versions, so you may need to scroll. Tick "Hardly Working". Without this permission, macOS blocks all synthetic mouse movement.
 
-## Le menu
+## The menu
 
-| Élément | Rôle |
+| Item | What it does |
 |---|---|
-| **Active** | L'interrupteur principal. Décoché, l'app ne surveille plus rien du tout. |
-| **Idle threshold** | Délai d'inactivité avant d'agir : 2, 3, 4, 5 ou 10 min. Défaut : 4 min. |
-| **Launch at login** | Démarrage automatique à l'ouverture de session. Désactivé par défaut. |
+| **Active** | The main switch. Unchecked, the app monitors nothing at all. |
+| **Idle threshold** | How long to wait before acting: 2, 3, 4, 5 or 10 min. Default: 4 min. |
+| **Launch at login** | Start automatically when you log in. Off by default. |
 
-L'icône reflète l'état : tasse pleine (actif), tasse vide (en pause), triangle (problème à régler).
+The icon reflects the state: full cup (active), empty cup (paused), triangle (something needs fixing).
 
-### Régler le seuil
+### Choosing a threshold
 
-Microsoft ne publie pas le délai exact au bout duquel Teams bascule en « away » (estimé à ~5 min, non mesuré). Le défaut de 4 min passe juste en dessous. Si votre statut bascule quand même, descendre à 3 ou 2 min.
+Microsoft doesn't publish the exact delay after which Teams switches you to "away" (estimated at ~5 min, never measured). The 4 min default sits just under it. If your status flips anyway, drop to 3 or 2 min.
 
-## À savoir
+## Worth knowing
 
-**Votre Mac ne se mettra plus en veille tout seul** tant que l'app est active : c'est le même compteur d'inactivité qui déclenche la veille. Décochez « Active » en partant le soir, ou fermez simplement le capot.
+**Your Mac will no longer sleep on its own** while the app is active: sleep is triggered by the same idle timer. Uncheck "Active" when you leave for the day, or just close the lid.
 
-**Plus important encore : votre session ne se verrouillera plus toute seule non plus.** Le verrouillage automatique de session s'appuie sur ce même compteur d'inactivité — sur une machine de travail, c'est précisément le cas visé par l'app (s'absenter longuement) qui laisse la session ouverte plus longtemps que prévu. Pensez à verrouiller manuellement en partant : `Ctrl-Cmd-Q`, ou un coin actif réglé sur « Verrouiller l'écran » (Réglages Système → Bureau et Dock → Coins actifs).
+**More importantly, your screen will no longer lock itself either.** Automatic screen locking relies on that same idle timer — so on a work machine, the exact situation this app is built for (being away for a while) is the one that leaves your session unlocked longer than you'd expect. Lock it yourself on the way out: `Ctrl-Cmd-Q`, or set a hot corner to "Lock Screen" (System Settings → Desktop & Dock → Hot Corners).
 
-## Si l'icône passe au triangle
+## If the icon turns into a triangle
 
-Le triangle est le seul organe de sécurité du produit — il recouvre deux causes distinctes, à distinguer via **le bandeau affiché en haut du menu** :
+The triangle is the product's only safety mechanism. It covers two distinct causes, told apart by **the banner at the top of the menu**:
 
-- **« Accessibility permission required »** → la permission n'a jamais été accordée (ou a été retirée). Cliquer sur « Open Accessibility Settings… » et cocher « Hardly Working » dans Réglages Système → Confidentialité et sécurité → Accessibilité.
-- **« Mouse nudge had no effect… »** → la permission est cochée mais les mouvements de souris n'ont eu aucun effet sur deux cycles consécutifs. Typiquement une permission révoquée silencieusement après une mise à jour macOS (retirer puis remettre la coche dans Réglages répare souvent ce cas), ou une restriction système (MDM, profil de configuration) qui bloque les événements souris synthétiques.
+- **"Accessibility permission required"** → the permission was never granted, or was revoked. Click "Open Accessibility Settings…" and tick "Hardly Working" under System Settings → Privacy & Security → Accessibility.
+- **"Mouse nudge had no effect…"** → the permission is ticked, but mouse movements had no effect on two consecutive cycles. Typically a permission silently revoked by a macOS update (removing and re-adding the tick in Settings often fixes this), or a system restriction (MDM, configuration profile) blocking synthetic mouse events.
 
-Décocher puis recocher « Active » n'efface jamais l'alerte à lui seul : seul un mouvement qui réussit à nouveau à faire retomber le compteur d'inactivité la lève — ou la perte puis le retour de la permission Accessibilité (c'est justement le remède au deuxième cas ci-dessus), qui réinitialise la détection.
+Unchecking and re-checking "Active" never clears the alert on its own: only a nudge that succeeds in dropping the idle timer clears it — or losing and regaining the Accessibility permission, which is precisely the remedy for the second case above, since it resets the detection.
 
-### Cas particulier : l'app est cochée dans les Réglages, mais le triangle persiste
+### Special case: the app is ticked in Settings, but the triangle persists
 
-Symptôme déroutant : « Hardly Working » figure bien dans Réglages Système → Confidentialité et sécurité → Accessibilité, la case est cochée, et pourtant l'app affiche l'alerte. Décocher puis recocher ne change rien.
+A confusing symptom: "Hardly Working" is listed under System Settings → Privacy & Security → Accessibility, the box is ticked, and yet the app still shows the alert. Unticking and re-ticking changes nothing.
 
-Cause : macOS n'enregistre pas seulement « cette app est autorisée », il enregistre **l'empreinte cryptographique** de l'app autorisée. Si la signature de l'app a changé depuis (nouveau certificat, par exemple), l'entrée conserve le même nom et la même case cochée, mais **ne correspond plus au binaire installé**. La case ne fait que basculer un interrupteur sur un enregistrement périmé.
+The cause: macOS doesn't just record "this app is allowed", it records the **code signature** of the allowed app. If the app's signature has changed since (a new certificate, for instance), the entry keeps the same name and the same ticked box, but **no longer matches the installed binary**. The tick is just flipping a switch on a stale record.
 
-Correctif — supprimer l'entrée pour qu'une neuve soit créée :
+The fix is to delete the entry so a fresh one gets created:
 
 ```bash
 tccutil reset Accessibility com.madzar.hardlyworking
 ```
 
-Puis relancer l'app et réaccorder la permission. (Équivalent manuel : sélectionner l'entrée dans la liste et cliquer le bouton `−`, plutôt que de décocher la case.)
+Then relaunch the app and grant the permission again. (Manual equivalent: select the entry in the list and click the `−` button, rather than unticking the box.)
 
-Ce cas ne se produit qu'après un changement de signature. En usage normal, la permission n'a jamais à être réaccordée, y compris lors des mises à jour.
+This only happens after a signature change. In normal use the permission never has to be granted again, including across updates.
 
-## Construire depuis les sources
+## Building from source
 
-Nécessite Xcode et XcodeGen (`brew install xcodegen`).
+Requires Xcode and XcodeGen (`brew install xcodegen`).
 
 ```bash
-xcodegen generate                         # génère le projet Xcode depuis project.yml
-open HardlyWorking.xcodeproj              # pour développer et déboguer
-bash scripts/build-dmg.sh                 # construit l'app et produit dist/Hardly Working.dmg
+xcodegen generate                         # generate the Xcode project from project.yml
+open HardlyWorking.xcodeproj              # to develop and debug
+bash scripts/build-dmg.sh                 # build the app and produce dist/Hardly Working.dmg
 ```
 
-`project.yml` est la source de vérité — le `.xcodeproj` est généré et non versionné.
+`project.yml` is the source of truth — the `.xcodeproj` is generated and not versioned.
+
+Other scripts, none of them needed for a plain build:
+
+| Script | What it does |
+|---|---|
+| `scripts/make-icon.sh` | regenerates the app icon set from `assets/icon.svg` |
+| `scripts/make-favicon.sh` | regenerates the site favicon from `assets/favicon.svg` |
+| `scripts/deploy-site.sh` | publishes `site/` to the `gh-pages` branch |
+| `scripts/stats.sh` | prints download counts and repository traffic |
 
 ### Tests
 
@@ -86,13 +97,12 @@ xcodegen generate && xcodebuild -project HardlyWorking.xcodeproj \
   -scheme HardlyWorking -destination 'platform=macOS' test
 ```
 
-Les tests couvrent la logique pure (seuil, réglages, machine à états, auto-vérification) sans toucher au système ni bouger la vraie souris. La vérification que le produit remplit sa fonction reste manuelle : laisser le Mac inactif et constater que le statut reste vert.
+The tests cover the pure logic (threshold, settings, state machine, self-verification) without touching the system or moving the real cursor. Verifying that the product does its actual job stays manual: leave the Mac idle and watch the status stay green.
 
 ## Distribution
 
-Le DMG est signé avec un certificat *Developer ID* et **notarisé par Apple** : il s'installe sans aucun avertissement de sécurité. `scripts/build-dmg.sh` s'en charge automatiquement si le certificat et le profil de notarisation sont présents sur la machine.
+The DMG is signed with a *Developer ID* certificate and **notarized by Apple**, so it installs without any security warning. `scripts/build-dmg.sh` handles this automatically when the certificate and the notarization profile are present on the machine, and skips it otherwise — so the script still works if you clone this repository without an Apple developer account.
 
+## History
 
-## Historique
-
-Remplace [`teams-presence`](../teams-presence/), une première version en script bash. Cette v2 native supprime ses trois fragilités : dépendance à Homebrew (`cliclick`), permission Accessibilité cassée à chaque mise à jour, et contournement de la protection TCC du dossier `~/Documents`.
+Replaces `teams-presence`, an earlier bash-script version. This native v2 removes its three weaknesses: a dependency on Homebrew (`cliclick`), an Accessibility permission that broke on every update, and a workaround for the TCC protection on the `~/Documents` folder.

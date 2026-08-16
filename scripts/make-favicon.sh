@@ -23,6 +23,12 @@ qlmanage -t -s 1024 -o "$TMP" "$SVG" >/dev/null 2>&1
 MASTER="$TMP/$(basename "$SVG").png"
 [[ -f "$MASTER" ]] || { echo "Le rendu du SVG a échoué." >&2; exit 1; }
 
+echo "==> Restitution des coins transparents"
+# Même défaut que pour l'icône de l'app : qlmanage aplatit sur du blanc opaque.
+# Sur une barre d'onglets sombre, des coins blancs se voient immédiatement.
+swift "$PROJECT_DIR/scripts/round-corners.swift" "$MASTER" "$TMP/master-rounded.png"
+MASTER="$TMP/master-rounded.png"
+
 echo "==> Génération des déclinaisons"
 # 16/32 : onglet de navigateur (32 = le même onglet sur écran Retina).
 # 180    : « ajouter à l'écran d'accueil » sur iOS.

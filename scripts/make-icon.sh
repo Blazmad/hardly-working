@@ -20,12 +20,24 @@ qlmanage -t -s 1024 -o "$TMP" "$SVG" >/dev/null 2>&1
 MASTER="$TMP/$(basename "$SVG").png"
 [[ -f "$MASTER" ]] || { echo "Le rendu du SVG a échoué." >&2; exit 1; }
 
+echo "==> Restitution des coins transparents"
+# qlmanage aplatit le rendu sur un fond BLANC OPAQUE : sans cette étape, les
+# coins arrondis du rx="232" sortent en blanc plein. Invisible dans le Dock de
+# macOS 26 (qui remasque les icônes), bien visible sur macOS 14/15 et dans le
+# README GitHub, qui affichent le PNG tel quel.
+swift "$PROJECT_DIR/scripts/round-corners.swift" "$MASTER" "$TMP/master-rounded.png"
+MASTER="$TMP/master-rounded.png"
+
 echo "==> Génération des déclinaisons"
 mkdir -p "$ICONSET"
 # macOS attend ces dix tailles : 16/32/128/256/512 points, chacune en 1x et 2x.
 for size in 16 32 64 128 256 512 1024; do
     sips -z "$size" "$size" "$MASTER" --out "$ICONSET/icon_${size}.png" >/dev/null
 done
+
+# Image du README. Produite ici pour qu'elle ne diverge plus de l'icône :
+# elle avait été fabriquée à la main, donc gardait les coins blancs.
+cp "$ICONSET/icon_256.png" "$PROJECT_DIR/assets/icon-256.png"
 
 echo "==> Écriture du catalogue"
 cat > "$ICONSET/Contents.json" <<'JSON'
