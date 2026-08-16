@@ -1,5 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Sans cette balise, aucun téléphone n'applique le @media (max-width: 760px)
+     plus bas : la mise en page mobile existe mais reste inatteignable. -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hardly Working — your green dot doesn't need you</title>
 <meta name="description" content="A tiny macOS menu bar app that keeps your Teams, Slack or Discord status green while you're somewhere else.">
+
+<!-- Favicon. Chrome et Firefox prennent le SVG et le rendent net à toute
+     taille ; Safari l'ignore et retombe sur les PNG. Régénérés par
+     scripts/make-favicon.sh depuis assets/favicon.svg. -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
 <style>
   :root {
     --amber:       #D8792E;
@@ -278,6 +294,8 @@
     section { padding-top: 78px; }
   }
 </style>
+</head>
+<body>
 
 <div class="atmos"></div>
 
@@ -394,7 +412,7 @@
     <span class="closing">A green dot has never proven anything.</span>
     <span>
       <a href="https://github.com/Blazmad/hardly-working">Source on GitHub</a>
-      &nbsp;·&nbsp; macOS 14+ &nbsp;·&nbsp; Apple&nbsp;Development signed
+      &nbsp;·&nbsp; macOS 14+ &nbsp;·&nbsp; Notarized&nbsp;by&nbsp;Apple
     </span>
   </footer>
 
@@ -412,3 +430,6 @@
     setInterval(function () { el.textContent = ++n; }, 8000);
   })();
 </script>
+
+</body>
+</html>
