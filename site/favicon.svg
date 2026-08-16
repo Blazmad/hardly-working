@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Hardly Working">
+  <!-- Variante SIMPLIFIÉE de icon.svg, pour les tailles minuscules (onglet de
+       navigateur : 16 px logiques, 32 px sur écran Retina).
+
+       Pourquoi une variante et pas l'icône de l'app : rendue en 16 px, l'icône
+       complète devient illisible. Mesuré en rendant les deux avec qlmanage :
+       la vapeur (trait de 26/1024 ≈ 0,4 px à cette taille) se transforme en
+       tache grise, la soucoupe fusionne avec le bas de la tasse, et le tout
+       ne se lit plus comme une tasse.
+
+       Trois écarts avec l'icône de l'app, tous délibérés :
+       - pas de vapeur       : invisible en dessous de 48 px, ne fait que du bruit
+       - pas de soucoupe     : fusionne avec la tasse, et l'anse suffit à dire « tasse »
+       - tasse agrandie      : elle occupe la moitié de la toile au lieu d'un tiers
+
+       Même palette que l'icône et que la page, pour que ça reste le même logo. -->
+
+  <defs>
+    <linearGradient id="hw-ground" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#F0A857"/>
+      <stop offset="0.55" stop-color="#D8792E"/>
+      <stop offset="1" stop-color="#B4541A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="232" fill="url(#hw-ground)"/>
+
+  <!-- Anse d'abord : elle passe DERRIÈRE le corps de la tasse. -->
+  <path d="M 716 396 A 124 124 0 1 1 716 644" fill="none" stroke="#FFFCF7" stroke-width="80" stroke-linecap="round"/>
+
+  <!-- Corps de la tasse -->
+  <path d="M 216 300 L 728 300 L 688 664 C 679 730 634 768 576 768 L 368 768 C 310 768 265 730 256 664 Z" fill="#FFFCF7"/>
+
+  <!-- Café : c'est ce contraste sombre qui porte toute la lisibilité en petit. -->
+  <ellipse cx="472" cy="300" rx="256" ry="50" fill="#FFFCF7"/>
+  <ellipse cx="472" cy="302" rx="200" ry="34" fill="#6B3410"/>
+</svg>
