@@ -19,8 +19,6 @@ final class JiggleDecisionTests: XCTestCase {
     }
 
     func testHonoursThresholdParameterRatherThanADefault() {
-        // Même inactivité, deux seuils différents, résultats opposés :
-        // une implémentation qui coderait 240 en dur échouerait ici.
         XCTAssertTrue(JiggleDecision.shouldJiggle(idleSeconds: 150, thresholdSeconds: 120))
         XCTAssertFalse(JiggleDecision.shouldJiggle(idleSeconds: 150, thresholdSeconds: 300))
     }

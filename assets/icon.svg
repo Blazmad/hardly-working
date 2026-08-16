@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Hardly Working — tasse de café">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Hardly Working — coffee cup">
   <defs>
     <linearGradient id="hw-ground" x1="0" y1="0" x2="0.35" y2="1">
       <stop offset="0" stop-color="#F0A857"/>
@@ -11,34 +11,35 @@
     </linearGradient>
   </defs>
 
-  <!-- Fond. Icon Composer applique lui-même le masque arrondi ;
-       le rx ci-dessous ne sert qu'à l'aperçu hors de l'outil. -->
+  <!-- Background. macOS 26 applies its own rounded mask; scripts/round-corners.swift
+       cuts the rendered PNG along this same rx so it also holds on macOS 14 and 15,
+       which display app icons unmasked. -->
   <rect width="1024" height="1024" rx="232" fill="url(#hw-ground)"/>
 
-  <!-- Ordre de dessin, du fond vers l'avant : vapeur, soucoupe, ombre,
-       anse, corps, café. La soucoupe DOIT passer avant la tasse, sinon
-       elle s'affiche par-dessus et la tasse semble flotter. -->
+  <!-- Draw order, back to front: steam, saucer, shadow, handle, body, coffee.
+       The saucer MUST come before the cup, otherwise it paints over it and the
+       cup appears to float. -->
 
-  <!-- Vapeur : trois volutes, hauteurs inégales pour éviter l'effet peigne -->
+  <!-- Steam: three wisps at uneven heights, to avoid a comb-like look -->
   <g fill="none" stroke="#FFF8EE" stroke-opacity="0.62" stroke-width="26" stroke-linecap="round">
     <path d="M 424 392 C 392 344 452 320 424 268 C 410 242 420 226 430 214"/>
     <path d="M 512 372 C 480 316 540 290 512 234 C 498 206 508 188 518 176"/>
     <path d="M 600 392 C 568 344 628 320 600 268 C 586 242 596 226 606 214"/>
   </g>
 
-  <!-- Soucoupe : légèrement bombée, sous la tasse -->
+  <!-- Saucer: slightly domed, under the cup -->
   <path d="M 268 692 L 756 692 C 756 742 700 764 512 764 C 324 764 268 742 268 692 Z" fill="url(#hw-porcelain)"/>
 
-  <!-- Ombre de la tasse sur la soucoupe -->
+  <!-- Shadow cast by the cup onto the saucer -->
   <ellipse cx="512" cy="694" rx="164" ry="20" fill="#8F3F0E" fill-opacity="0.20"/>
 
-  <!-- Anse -->
+  <!-- Handle -->
   <path d="M 668 486 A 86 86 0 1 1 668 622" fill="none" stroke="url(#hw-porcelain)" stroke-width="46" stroke-linecap="round"/>
 
-  <!-- Corps de la tasse : léger fuselage, base arrondie, posée sur la soucoupe -->
+  <!-- Cup body: slightly tapered, rounded base, resting on the saucer -->
   <path d="M 342 452 L 682 452 L 656 640 C 650 678 622 700 584 700 L 440 700 C 402 700 374 678 368 640 Z" fill="url(#hw-porcelain)"/>
 
-  <!-- Café visible en haut de la tasse : c'est lui qui donne la lisibilité en petit -->
+  <!-- Coffee at the top of the cup: this is what carries legibility at small sizes -->
   <ellipse cx="512" cy="452" rx="170" ry="30" fill="#FFFCF7"/>
   <ellipse cx="512" cy="454" rx="132" ry="20" fill="#6B3410"/>
 </svg>

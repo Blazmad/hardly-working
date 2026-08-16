@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Publie le contenu de site/ sur la branche gh-pages.
+# Publishes the contents of site/ to the gh-pages branch.
 #
-# Remplace la manœuvre manuelle « copier index.html, changer de branche,
-# coller, revenir » : celle-ci ne copiait qu'un fichier, donc tout fichier
-# ajouté au site (favicon, image) restait sur main et renvoyait 404 en ligne.
+# Replaces the manual "copy index.html, switch branch, paste, switch back"
+# routine: that one copied a single file, so anything else added to the site
+# (favicon, images) stayed on main and returned 404 once live.
 #
-# Passe par un worktree jetable plutôt que par `git checkout gh-pages` :
-# la branche courante n'est jamais quittée, donc aucun risque de rester
-# coincé sur gh-pages si le script s'interrompt.
+# Uses a throwaway worktree rather than `git checkout gh-pages`, so the current
+# branch is never left behind if the script is interrupted.
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SITE="$PROJECT_DIR/site"
@@ -18,36 +17,36 @@ URL="https://blazmad.github.io/hardly-working/"
 
 cd "$PROJECT_DIR"
 
-[[ -d "$SITE" ]] || { echo "Introuvable : $SITE" >&2; exit 1; }
-[[ -f "$SITE/index.html" ]] || { echo "Pas d'index.html dans $SITE" >&2; exit 1; }
+[[ -d "$SITE" ]] || { echo "Not found: $SITE" >&2; exit 1; }
+[[ -f "$SITE/index.html" ]] || { echo "No index.html in $SITE" >&2; exit 1; }
 
 WORKTREE="$(mktemp -d)"
 cleanup() { git worktree remove --force "$WORKTREE" 2>/dev/null || true; }
 trap cleanup EXIT
 
-echo "==> Récupération de $BRANCH"
+echo "==> Fetching $BRANCH"
 git fetch origin "$BRANCH" --quiet
 git worktree add --quiet "$WORKTREE" "$BRANCH"
 git -C "$WORKTREE" reset --hard --quiet "origin/$BRANCH"
 
-echo "==> Copie du site"
-# --delete : un fichier retiré de site/ disparaît aussi du site en ligne.
+echo "==> Copying the site"
+# --delete: a file removed from site/ also disappears from the live site.
 rsync -a --delete --exclude '.git' "$SITE/" "$WORKTREE/"
-# .nojekyll dit à GitHub Pages de servir les fichiers tels quels, sans Jekyll.
+# .nojekyll tells GitHub Pages to serve the files as-is, without running Jekyll.
 touch "$WORKTREE/.nojekyll"
 
 git -C "$WORKTREE" add -A
 if git -C "$WORKTREE" diff --cached --quiet; then
-    echo "==> Rien à publier : le site en ligne est déjà à jour"
+    echo "==> Nothing to publish: the live site is already up to date"
     exit 0
 fi
 
-echo "==> Publication"
+echo "==> Publishing"
 git -C "$WORKTREE" -c user.name="$(git config user.name)" \
                    -c user.email="$(git config user.email)" \
-                   commit --quiet -m "chore(site): mise à jour de la landing page"
+                   commit --quiet -m "chore(site): update the landing page"
 git -C "$WORKTREE" push --quiet origin "$BRANCH"
 
 echo ""
-echo "Publié sur $URL"
+echo "Published to $URL"
 git -C "$WORKTREE" log -1 --oneline

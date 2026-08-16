@@ -1,18 +1,20 @@
 import CoreGraphics
 
-/// Provoque une activité souris minimale, suffisante pour réinitialiser
-/// le compteur d'inactivité du système.
 protocol Jiggling {
     func jiggle()
 }
 
-/// Déplace le curseur d'un pixel puis le ramène à sa position exacte.
-/// Imperceptible à l'œil, et n'émet jamais de clic.
+/// Moves the cursor by one pixel and puts it straight back. Imperceptible, and
+/// never emits a click.
 struct MouseJiggler: Jiggling {
     func jiggle() {
-        guard let origin = CGEvent(source: nil)?.location else { return }
+        guard let origin = currentCursorPosition() else { return }
         move(to: CGPoint(x: origin.x + 1, y: origin.y))
         move(to: origin)
+    }
+
+    private func currentCursorPosition() -> CGPoint? {
+        CGEvent(source: nil)?.location
     }
 
     private func move(to point: CGPoint) {

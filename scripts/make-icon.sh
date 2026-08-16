@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fabrique le jeu d'icônes de l'app à partir de assets/icon.svg.
-# N'utilise que des outils livrés avec macOS : qlmanage (rendu SVG),
-# sips (redimensionnement). Aucune dépendance à installer.
+# Builds the app icon set from assets/icon.svg using only tools shipped with
+# macOS: qlmanage renders the SVG, sips resizes it. Nothing to install.
 #
-# À relancer après toute modification de assets/icon.svg, puis reconstruire.
+# Re-run after editing assets/icon.svg, then rebuild the app.
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SVG="$PROJECT_DIR/assets/icon.svg"
@@ -13,33 +12,32 @@ ICONSET="$PROJECT_DIR/Sources/Assets.xcassets/AppIcon.appiconset"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-[[ -f "$SVG" ]] || { echo "Introuvable : $SVG" >&2; exit 1; }
+[[ -f "$SVG" ]] || { echo "Not found: $SVG" >&2; exit 1; }
 
-echo "==> Rendu du SVG en 1024×1024"
+echo "==> Rendering the SVG at 1024x1024"
 qlmanage -t -s 1024 -o "$TMP" "$SVG" >/dev/null 2>&1
 MASTER="$TMP/$(basename "$SVG").png"
-[[ -f "$MASTER" ]] || { echo "Le rendu du SVG a échoué." >&2; exit 1; }
+[[ -f "$MASTER" ]] || { echo "SVG rendering failed." >&2; exit 1; }
 
-echo "==> Restitution des coins transparents"
-# qlmanage aplatit le rendu sur un fond BLANC OPAQUE : sans cette étape, les
-# coins arrondis du rx="232" sortent en blanc plein. Invisible dans le Dock de
-# macOS 26 (qui remasque les icônes), bien visible sur macOS 14/15 et dans le
-# README GitHub, qui affichent le PNG tel quel.
+echo "==> Restoring transparent corners"
+# qlmanage flattens its output onto an OPAQUE WHITE background, so without this
+# step the corners left empty by the SVG's rx="232" come out solid white.
+# Invisible in the macOS 26 Dock, which re-masks app icons, but plainly visible
+# on macOS 14 and 15 and in the GitHub README, which show the PNG as-is.
 swift "$PROJECT_DIR/scripts/round-corners.swift" "$MASTER" "$TMP/master-rounded.png"
 MASTER="$TMP/master-rounded.png"
 
-echo "==> Génération des déclinaisons"
+echo "==> Generating the size variants"
 mkdir -p "$ICONSET"
-# macOS attend ces dix tailles : 16/32/128/256/512 points, chacune en 1x et 2x.
 for size in 16 32 64 128 256 512 1024; do
     sips -z "$size" "$size" "$MASTER" --out "$ICONSET/icon_${size}.png" >/dev/null
 done
 
-# Image du README. Produite ici pour qu'elle ne diverge plus de l'icône :
-# elle avait été fabriquée à la main, donc gardait les coins blancs.
+# The README image is produced here so it can no longer drift from the icon:
+# it used to be made by hand, which is how it kept the white corners.
 cp "$ICONSET/icon_256.png" "$PROJECT_DIR/assets/icon-256.png"
 
-echo "==> Écriture du catalogue"
+echo "==> Writing the asset catalog"
 cat > "$ICONSET/Contents.json" <<'JSON'
 {
   "images" : [
@@ -63,5 +61,5 @@ cat > "$PROJECT_DIR/Sources/Assets.xcassets/Contents.json" <<'JSON'
 JSON
 
 echo ""
-echo "Jeu d'icônes prêt : $ICONSET"
+echo "Icon set ready: $ICONSET"
 ls -1 "$ICONSET" | sed 's/^/  /'

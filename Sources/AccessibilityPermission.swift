@@ -1,28 +1,30 @@
-import ApplicationServices
 import AppKit
+import ApplicationServices
 
-/// État de la permission Accessibilité, sans laquelle aucun événement
-/// souris synthétique ne peut être émis.
 protocol PermissionChecking {
     var isGranted: Bool { get }
-    /// Déclenche la demande système (une popup, une seule fois par app).
     func requestAccess()
-    /// Ouvre directement le bon panneau des Réglages Système.
     func openSettings()
 }
 
+/// Without this permission macOS refuses to deliver any synthetic mouse event.
 struct AccessibilityPermission: PermissionChecking {
+    private static let settingsURL = URL(
+        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+    )
+
     var isGranted: Bool {
         AXIsProcessTrusted()
     }
 
+    /// Triggers the system prompt, which macOS shows only once per app.
     func requestAccess() {
         let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         _ = AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
     }
 
     func openSettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
+        guard let settingsURL = Self.settingsURL else { return }
+        NSWorkspace.shared.open(settingsURL)
     }
 }

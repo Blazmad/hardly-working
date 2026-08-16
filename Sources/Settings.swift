@@ -1,14 +1,16 @@
 import Foundation
 
-/// Réglages persistés entre les lancements.
 final class Settings: ObservableObject {
     private enum Key {
         static let isEnabled = "isEnabled"
         static let idleThreshold = "idleThresholdSeconds"
     }
 
-    /// Seuils proposés dans le menu, en secondes : 2, 3, 4, 5 et 10 minutes.
-    static let availableThresholds: [Int] = [120, 180, 240, 300, 600]
+    private static let secondsPerMinute = 60
+
+    static let availableThresholds = [2, 3, 4, 5, 10].map { $0 * Settings.secondsPerMinute }
+
+    private static let defaultThresholdSeconds = 4 * secondsPerMinute
 
     private let defaults: UserDefaults
 
@@ -24,7 +26,7 @@ final class Settings: ObservableObject {
         self.defaults = defaults
         defaults.register(defaults: [
             Key.isEnabled: true,
-            Key.idleThreshold: 240,
+            Key.idleThreshold: Self.defaultThresholdSeconds,
         ])
         self.isEnabled = defaults.bool(forKey: Key.isEnabled)
         self.idleThresholdSeconds = defaults.integer(forKey: Key.idleThreshold)

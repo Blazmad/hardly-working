@@ -1,14 +1,13 @@
 import Foundation
 import ServiceManagement
 
-/// Contrôle l'inscription de l'app au démarrage de session.
 protocol LoginItemManaging {
     var isEnabled: Bool { get }
     func setEnabled(_ enabled: Bool)
 }
 
-/// S'appuie sur SMAppService : l'app apparaît dans
-/// Réglages Système → Général → Ouverture, où l'utilisateur garde le contrôle.
+/// Registers through `SMAppService`, so the app shows up in System Settings →
+/// General → Login Items, where the user keeps control of it.
 struct LoginItem: LoginItemManaging {
     var isEnabled: Bool {
         SMAppService.mainApp.status == .enabled
@@ -16,11 +15,7 @@ struct LoginItem: LoginItemManaging {
 
     func setEnabled(_ enabled: Bool) {
         do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
+            try enabled ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister()
         } catch {
             NSLog("Hardly Working: login item update failed — \(error.localizedDescription)")
         }

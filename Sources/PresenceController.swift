@@ -1,39 +1,49 @@
 import Foundation
 
-/// Ce que l'app est en train de faire, et ce que l'icône doit refléter.
 enum PresenceState: Equatable {
-    /// L'utilisateur a coupé l'app.
     case paused
-    /// Tout va bien : la surveillance tourne.
     case active
-    /// La permission Accessibilité manque — rien ne peut fonctionner.
     case needsPermission
-    /// Le mouvement a été émis mais n'a eu aucun effet sur le compteur.
     case ineffective
 }
 
-/// Chef d'orchestre : décide quand bouger la souris, et vérifie que ça a servi.
+/// Counts consecutive failed verifications so a raised alert can only be cleared
+/// by evidence. It deliberately offers no general-purpose reset: the only ways
+/// out are a nudge that worked, or a missing permission that explains the fault.
+private struct FailureLedger {
+    private static let failuresBeforeAlert = 2
+
+    private var consecutiveFailures = 0
+
+    var alertIsRaised: Bool { consecutiveFailures >= Self.failuresBeforeAlert }
+
+    mutating func recordFailedNudge() {
+        consecutiveFailures += 1
+    }
+
+    mutating func recordSuccessfulNudge() {
+        consecutiveFailures = 0
+    }
+
+    mutating func forgetBecausePermissionIsMissing() {
+        consecutiveFailures = 0
+    }
+}
+
 @MainActor
 final class PresenceController: ObservableObject {
-    /// Fréquence de sondage. Volontairement non exposée dans l'interface.
     private static let checkInterval: TimeInterval = 20
 
-    /// Temps laissé au système pour enregistrer le mouvement avant de vérifier.
-    /// Mesuré sur la machine cible (`spikes/settling-time.swift`) : une relecture
-    /// immédiate ne voit le mouvement que 2 fois sur 12 ; à partir de 5 ms, 12/12.
-    /// 50 ms laisse une marge confortable tout en restant imperceptible.
+    /// A synthetic mouse event takes a few milliseconds to reach the system idle
+    /// counter. Measured by `spikes/settling-time.swift`: reading the counter back
+    /// immediately sees the movement 2 times out of 12, and 12 out of 12 from 5 ms
+    /// onwards. 50 ms keeps a wide margin while staying imperceptible.
     nonisolated static let defaultVerificationDelay: Duration = .milliseconds(50)
-
-    /// Nombre d'échecs consécutifs avant de déclarer l'alerte. Un raté ponctuel
-    /// de propagation ne doit jamais faire crier au loup : une alerte qu'on voit
-    /// à tort est une alerte qu'on finit par ignorer.
-    private static let failuresBeforeAlert = 2
 
     @Published private(set) var state: PresenceState = .paused
 
-    /// La boucle de surveillance tourne-t-elle réellement ? Exposé pour que les
-    /// tests puissent affirmer qu'un `refresh()` arme bien la minuterie — une
-    /// version qui oubliait de le faire est déjà passée inaperçue une fois.
+    /// Lets tests assert that `refresh()` actually scheduled the timer. A version
+    /// that built one without scheduling it once shipped unnoticed.
     var isRunning: Bool { timer != nil }
 
     private let idleMonitor: IdleMonitoring
@@ -41,8 +51,9 @@ final class PresenceController: ObservableObject {
     private let permission: PermissionChecking
     private let settings: Settings
     private let verificationDelay: Duration
+
     private var timer: Timer?
-    private var consecutiveFailures = 0
+    private var failures = FailureLedger()
 
     init(idleMonitor: IdleMonitoring,
          jiggler: Jiggling,
@@ -56,33 +67,48 @@ final class PresenceController: ObservableObject {
         self.verificationDelay = verificationDelay
     }
 
-    /// À appeler au lancement et à chaque changement de réglage.
     func refresh() {
         stop()
+        guard settings.isEnabled else { return }
+        state = stateForFreshLoop()
+        schedulePollingLoop()
+    }
 
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        state = .paused
+    }
+
+    func tick() async {
         guard settings.isEnabled else {
-            state = .paused
+            stop()
             return
         }
-
-        // La boucle démarre MÊME sans permission : c'est elle qui détectera que
-        // la permission a été accordée. Sans ça, l'utilisateur qui corrige la
-        // permission dans les Réglages resterait bloqué jusqu'au redémarrage.
-        if !permission.isGranted {
-            consecutiveFailures = 0
-            state = .needsPermission
-        } else if consecutiveFailures >= Self.failuresBeforeAlert {
-            // Une panne constatée reste affichée tant qu'aucune vérification n'a
-            // réussi — y compris après un aller-retour sur l'interrupteur, qui est
-            // le premier réflexe devant une icône d'avertissement. Seul un mouvement
-            // qui fait réellement retomber le compteur blanchit l'alerte.
-            state = .ineffective
-        } else {
-            state = .active
+        guard permission.isGranted else {
+            reportMissingPermission()
+            return
         }
+        guard userHasBeenIdleLongEnough() else {
+            reportMonitoringState()
+            return
+        }
+        await nudgeAndVerify()
+    }
+}
 
-        // Mode .common : sans lui, la minuterie ne se déclenche pas pendant que
-        // l'utilisateur garde le menu de la barre de statut ouvert.
+private extension PresenceController {
+    func stateForFreshLoop() -> PresenceState {
+        guard permission.isGranted else {
+            failures.forgetBecausePermissionIsMissing()
+            return .needsPermission
+        }
+        return failures.alertIsRaised ? .ineffective : .active
+    }
+
+    /// Scheduled in `.common` mode so the loop keeps firing while the user holds
+    /// the menu bar menu open.
+    func schedulePollingLoop() {
         let timer = Timer(timeInterval: Self.checkInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.tick() }
         }
@@ -90,59 +116,40 @@ final class PresenceController: ObservableObject {
         self.timer = timer
     }
 
-    func stop() {
-        timer?.invalidate()
-        timer = nil
-        // `consecutiveFailures` n'est délibérément PAS remis à zéro ici : c'est la
-        // mémoire d'une panne constatée, et seule une vérification réussie (ou la
-        // perte de la permission) a le droit de la blanchir. L'effacer ici
-        // permettrait d'éteindre l'alerte en éteignant puis rallumant l'app.
-        // L'état, lui, suit l'arrêt : sinon un `stop()` laisserait l'icône afficher
-        // « actif » au-dessus d'une boucle morte — exactement le mensonge que
-        // tout ce mécanisme existe pour empêcher.
-        state = .paused
+    /// Leaves the loop running on purpose: polling is the only way to notice the
+    /// user granting the permission in System Settings.
+    func reportMissingPermission() {
+        failures.forgetBecausePermissionIsMissing()
+        state = .needsPermission
     }
 
-    /// Un cycle de la boucle. Séparé de la minuterie pour être testable directement.
-    func tick() async {
-        guard settings.isEnabled else {
-            stop()
-            return
-        }
-        guard permission.isGranted else {
-            // On ne coupe PAS la minuterie : elle est le seul moyen de repérer
-            // que la permission a été rendue.
-            consecutiveFailures = 0
-            state = .needsPermission
-            return
-        }
+    func reportMonitoringState() {
+        state = failures.alertIsRaised ? .ineffective : .active
+    }
 
-        let idle = idleMonitor.idleSeconds()
-        guard JiggleDecision.shouldJiggle(idleSeconds: idle,
-                                          thresholdSeconds: settings.idleThresholdSeconds) else {
-            // Pas de remise à zéro ici : une panne constatée pendant l'absence ne doit
-            // pas être blanchie par le simple retour de l'utilisateur. Seule une
-            // vérification réussie (plus bas) a le droit de l'effacer.
-            state = consecutiveFailures >= Self.failuresBeforeAlert ? .ineffective : .active
-            return
-        }
+    func userHasBeenIdleLongEnough() -> Bool {
+        JiggleDecision.shouldJiggle(idleSeconds: idleMonitor.idleSeconds(),
+                                    thresholdSeconds: settings.idleThresholdSeconds)
+    }
 
+    func nudgeAndVerify() async {
         jiggler.jiggle()
+        await waitForTheSystemToRegisterTheNudge()
 
-        // Le compteur système met quelques millisecondes à refléter l'événement :
-        // relire tout de suite donnerait une fausse alerte 8 fois sur 10 (mesuré).
-        if verificationDelay > .zero {
-            try? await Task.sleep(for: verificationDelay)
-        }
-
-        // Auto-vérification : sans elle, une panne serait totalement silencieuse.
-        // L'état d'alerte est transitoire — il se lève dès qu'un mouvement réussit.
-        if idleMonitor.idleSeconds() >= TimeInterval(settings.idleThresholdSeconds) {
-            consecutiveFailures += 1
-            state = consecutiveFailures >= Self.failuresBeforeAlert ? .ineffective : .active
+        if nudgeResetTheIdleCounter() {
+            failures.recordSuccessfulNudge()
         } else {
-            consecutiveFailures = 0
-            state = .active
+            failures.recordFailedNudge()
         }
+        reportMonitoringState()
+    }
+
+    func waitForTheSystemToRegisterTheNudge() async {
+        guard verificationDelay > .zero else { return }
+        try? await Task.sleep(for: verificationDelay)
+    }
+
+    func nudgeResetTheIdleCounter() -> Bool {
+        idleMonitor.idleSeconds() < TimeInterval(settings.idleThresholdSeconds)
     }
 }

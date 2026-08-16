@@ -18,6 +18,7 @@ final class SettingsTests: XCTestCase {
 
     func testDefaultsAreEnabledAtFourMinutes() {
         let settings = Settings(defaults: defaults)
+
         XCTAssertTrue(settings.isEnabled)
         XCTAssertEqual(settings.idleThresholdSeconds, 240)
     }
@@ -28,6 +29,7 @@ final class SettingsTests: XCTestCase {
         settings.idleThresholdSeconds = 600
 
         let reloaded = Settings(defaults: defaults)
+
         XCTAssertFalse(reloaded.isEnabled)
         XCTAssertEqual(reloaded.idleThresholdSeconds, 600)
     }

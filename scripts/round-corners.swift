@@ -1,19 +1,19 @@
 #!/usr/bin/env swift
 
-// Rend transparents les pixels situés hors du rectangle arrondi de l'icône.
+// Makes every pixel outside the icon's rounded rectangle transparent.
 //
-// Pourquoi : qlmanage aplatit tout rendu SVG sur un fond BLANC OPAQUE. Le
-// PNG produit a bien un canal alpha, mais les coins laissés vides par le
-// rx="232" du SVG en ressortent en (255,255,255,255) — du blanc opaque, pas
-// du transparent. Invisible dans le Dock de macOS 26, qui remasque lui-même
-// les icônes ; bien visible partout ailleurs (README GitHub, macOS 14 et 15,
-// qui affichent le PNG tel quel).
+// qlmanage flattens any SVG render onto an OPAQUE WHITE background. The PNG it
+// produces does carry an alpha channel, but the corners left empty by the SVG's
+// rx="232" come out as (255,255,255,255) - opaque white, not transparent.
+// Invisible in the macOS 26 Dock, which re-masks app icons, and plainly visible
+// everywhere else: the GitHub README, a dark browser tab strip, and macOS 14 and
+// 15, which show the PNG as-is.
 //
-// Le rayon reprend exactement la proportion du SVG (232 sur 1024) pour que la
-// découpe suive le tracé d'origine au lieu d'en inventer un autre.
+// The radius reuses the SVG's own proportion (232 of 1024) so the cut follows
+// the original outline instead of inventing a different one.
 //
-// N'utilise que des frameworks livrés avec macOS. Usage :
-//   swift scripts/round-corners.swift entrée.png sortie.png
+// Uses only frameworks shipped with macOS. Usage:
+//   swift scripts/round-corners.swift input.png output.png
 
 import AppKit
 
@@ -23,14 +23,14 @@ func fail(_ message: String) -> Never {
 }
 
 let args = CommandLine.arguments
-guard args.count == 3 else { fail("usage : round-corners.swift <entrée.png> <sortie.png>") }
+guard args.count == 3 else { fail("usage: round-corners.swift <input.png> <output.png>") }
 
 let input = URL(fileURLWithPath: args[1])
 let output = URL(fileURLWithPath: args[2])
 
 guard let image = NSImage(contentsOf: input),
       let source = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-    fail("lecture impossible : \(input.path)")
+    fail("cannot read: \(input.path)")
 }
 
 let width = source.width
@@ -44,7 +44,7 @@ guard let context = CGContext(data: nil,
                               bytesPerRow: 0,
                               space: CGColorSpaceCreateDeviceRGB(),
                               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-    fail("création du contexte impossible")
+    fail("cannot create the drawing context")
 }
 
 let bounds = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
@@ -55,8 +55,8 @@ context.draw(source, in: bounds)
 
 guard let masked = context.makeImage(),
       let data = NSBitmapImageRep(cgImage: masked).representation(using: .png, properties: [:]) else {
-    fail("encodage PNG impossible")
+    fail("cannot encode the PNG")
 }
 
 do { try data.write(to: output) }
-catch { fail("écriture impossible : \(output.path) — \(error.localizedDescription)") }
+catch { fail("cannot write: \(output.path) - \(error.localizedDescription)") }

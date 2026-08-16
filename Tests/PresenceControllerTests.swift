@@ -1,24 +1,29 @@
 import XCTest
 @testable import HardlyWorking
 
-/// Renvoie une suite de valeurs scriptées, pour simuler le compteur
-/// d'inactivité avant et après un mouvement de souris.
+/// Replays a scripted sequence of idle readings, so a test can describe what the
+/// system reports before and after a nudge.
 private final class FakeIdleMonitor: IdleMonitoring {
-    private let values: [TimeInterval]
+    private let readings: [TimeInterval]
     private(set) var callCount = 0
 
-    init(_ values: [TimeInterval]) { self.values = values }
+    init(_ readings: [TimeInterval]) {
+        self.readings = readings
+    }
 
     func idleSeconds() -> TimeInterval {
         defer { callCount += 1 }
-        guard !values.isEmpty else { return 0 }
-        return callCount < values.count ? values[callCount] : values[values.count - 1]
+        guard !readings.isEmpty else { return 0 }
+        return callCount < readings.count ? readings[callCount] : readings[readings.count - 1]
     }
 }
 
 private final class SpyJiggler: Jiggling {
     private(set) var jiggleCount = 0
-    func jiggle() { jiggleCount += 1 }
+
+    func jiggle() {
+        jiggleCount += 1
+    }
 }
 
 private struct StubPermission: PermissionChecking {
@@ -29,7 +34,11 @@ private struct StubPermission: PermissionChecking {
 
 private final class MutablePermission: PermissionChecking {
     var isGranted: Bool
-    init(isGranted: Bool) { self.isGranted = isGranted }
+
+    init(isGranted: Bool) {
+        self.isGranted = isGranted
+    }
+
     func requestAccess() {}
     func openSettings() {}
 }
@@ -44,9 +53,9 @@ final class PresenceControllerTests: XCTestCase {
         return settings
     }
 
-    /// Renvoie le contrôleur ET ses doublures : sans référence sur elles, aucun
-    /// test ne pourrait vérifier COMBIEN de fois le compteur a été lu ni la souris
-    /// bougée — et une implémentation qui lirait une fois de trop passerait inaperçue.
+    /// Hands back the doubles alongside the controller: without a reference to
+    /// them no test could assert how many times the counter was read or the mouse
+    /// moved, and an implementation reading one time too many would slip through.
     private func makeController(
         idle: [TimeInterval],
         permissionGranted: Bool = true,
@@ -54,107 +63,121 @@ final class PresenceControllerTests: XCTestCase {
     ) -> (controller: PresenceController, monitor: FakeIdleMonitor, jiggler: SpyJiggler) {
         let monitor = FakeIdleMonitor(idle)
         let jiggler = SpyJiggler()
-        let controller = PresenceController(
-            idleMonitor: monitor,
-            jiggler: jiggler,
-            permission: StubPermission(isGranted: permissionGranted),
-            settings: settings,
-            // Aucune attente en test : le délai d'installation ne concerne que
-            // le vrai système, et le fake répond instantanément.
-            verificationDelay: .zero
-        )
+        let controller = PresenceController(idleMonitor: monitor,
+                                            jiggler: jiggler,
+                                            permission: StubPermission(isGranted: permissionGranted),
+                                            settings: settings,
+                                            verificationDelay: .zero)
         return (controller, monitor, jiggler)
     }
 
     func testDoesNotJiggleBelowThreshold() async {
         let (controller, monitor, jiggler) = makeController(idle: [100], settings: makeSettings())
+
         await controller.tick()
+
         XCTAssertEqual(jiggler.jiggleCount, 0)
         XCTAssertEqual(controller.state, .active)
-        XCTAssertEqual(monitor.callCount, 1, "Sous le seuil : une seule lecture, pas de vérification.")
+        XCTAssertEqual(monitor.callCount, 1, "Below the threshold: one reading, no verification.")
     }
 
     func testJigglesAboveThresholdAndStaysActiveWhenCounterDrops() async {
-        // 1re lecture : inactif depuis 300s → on bouge. 2e lecture (vérification) : 0s → succès.
         let (controller, monitor, jiggler) = makeController(idle: [300, 0], settings: makeSettings())
+
         await controller.tick()
+
         XCTAssertEqual(jiggler.jiggleCount, 1)
         XCTAssertEqual(controller.state, .active)
-        XCTAssertEqual(monitor.callCount, 2, "Exactement deux lectures : la décision, puis la vérification.")
+        XCTAssertEqual(monitor.callCount, 2, "Exactly two readings: the decision, then the verification.")
     }
 
     func testFirstFailedVerificationDoesNotRaiseTheAlarmYet() async {
-        // Un seul échec peut être un simple raté de propagation : on ne crie pas au loup.
         let (controller, _, jiggler) = makeController(idle: [300, 300], settings: makeSettings())
+
         await controller.tick()
+
         XCTAssertEqual(jiggler.jiggleCount, 1)
-        XCTAssertEqual(controller.state, .active, "Un échec isolé ne doit pas déclencher l'alerte.")
+        XCTAssertEqual(controller.state, .active, "An isolated miss must not raise the alarm.")
     }
 
     func testTwoConsecutiveFailedVerificationsRaiseTheAlarm() async {
-        // Deux échecs d'affilée : là, c'est une vraie panne.
         let (controller, _, jiggler) = makeController(idle: [300, 300, 300, 300], settings: makeSettings())
+
         await controller.tick()
         await controller.tick()
+
         XCTAssertEqual(jiggler.jiggleCount, 2)
         XCTAssertEqual(controller.state, .ineffective)
     }
 
     func testAlarmClearsBecauseAJiggleSucceeded() async {
-        // ticks 1-2 : deux échecs → alerte. tick 3 : le mouvement fait effet → alerte levée.
         let (controller, _, jiggler) = makeController(idle: [300, 300, 300, 300, 300, 0],
                                                       settings: makeSettings())
+
         await controller.tick()
         await controller.tick()
         XCTAssertEqual(controller.state, .ineffective)
 
         await controller.tick()
-        XCTAssertEqual(controller.state, .active, "Une alerte ne doit jamais rester collée après un succès.")
+
+        XCTAssertEqual(controller.state, .active, "An alarm must never stay stuck after a success.")
         XCTAssertEqual(jiggler.jiggleCount, 3,
-                       "L'alerte doit se lever PARCE QU'un mouvement a réussi, pas parce que l'utilisateur est revenu.")
+                       "The alarm must clear BECAUSE a nudge worked, not because the user came back.")
     }
 
     func testPausedWhenDisabled() async {
         let (controller, _, jiggler) = makeController(idle: [300, 0], settings: makeSettings(enabled: false))
+
         await controller.tick()
+
         XCTAssertEqual(jiggler.jiggleCount, 0)
         XCTAssertEqual(controller.state, .paused)
     }
 
     func testNeedsPermissionWhenNotGranted() async {
         let (controller, _, jiggler) = makeController(idle: [300, 0],
-                                                      permissionGranted: false, settings: makeSettings())
+                                                      permissionGranted: false,
+                                                      settings: makeSettings())
+
         await controller.tick()
-        XCTAssertEqual(jiggler.jiggleCount, 0, "Sans permission, aucun mouvement ne doit être tenté.")
+
+        XCTAssertEqual(jiggler.jiggleCount, 0, "Without permission, no movement may be attempted.")
         XCTAssertEqual(controller.state, .needsPermission)
     }
 
     func testRespectsCustomThreshold() async {
         let (controller, _, jiggler) = makeController(idle: [150, 0], settings: makeSettings(threshold: 120))
-        await controller.tick()
-        XCTAssertEqual(jiggler.jiggleCount, 1, "150s dépasse un seuil réglé à 120s.")
-    }
 
-    // MARK: - refresh() et stop()
+        await controller.tick()
+
+        XCTAssertEqual(jiggler.jiggleCount, 1, "150s is past a threshold set to 120s.")
+    }
 
     func testRefreshReportsPausedWhenDisabled() {
         let (controller, _, _) = makeController(idle: [300, 0], settings: makeSettings(enabled: false))
+
         controller.refresh()
+
         XCTAssertEqual(controller.state, .paused)
         controller.stop()
     }
 
     func testRefreshReportsNeedsPermissionWhenNotGranted() {
         let (controller, _, _) = makeController(idle: [300, 0],
-                                                permissionGranted: false, settings: makeSettings())
+                                                permissionGranted: false,
+                                                settings: makeSettings())
+
         controller.refresh()
+
         XCTAssertEqual(controller.state, .needsPermission)
         controller.stop()
     }
 
     func testRefreshReportsActiveWhenEnabledAndPermitted() {
         let (controller, _, _) = makeController(idle: [300, 0], settings: makeSettings())
+
         controller.refresh()
+
         XCTAssertEqual(controller.state, .active)
         controller.stop()
     }
@@ -163,9 +186,11 @@ final class PresenceControllerTests: XCTestCase {
         let (controller, _, _) = makeController(idle: [300, 0], settings: makeSettings())
         controller.refresh()
         XCTAssertEqual(controller.state, .active)
+
         controller.stop()
+
         XCTAssertEqual(controller.state, .paused,
-                       "Après stop(), l'icône ne doit jamais afficher « actif » au-dessus d'une boucle morte.")
+                       "After stop(), the icon must never show 'active' above a dead loop.")
     }
 
     func testAlarmSurvivesASettingsChange() async {
@@ -175,10 +200,11 @@ final class PresenceControllerTests: XCTestCase {
         await controller.tick()
         XCTAssertEqual(controller.state, .ineffective)
 
-        settings.idleThresholdSeconds = 300   // l'utilisateur touche un réglage
+        settings.idleThresholdSeconds = 300
         controller.refresh()
+
         XCTAssertEqual(controller.state, .ineffective,
-                       "Changer un réglage ne prouve pas que la panne est résolue.")
+                       "Changing a setting does not prove the fault is gone.")
         controller.stop()
     }
 
@@ -195,30 +221,29 @@ final class PresenceControllerTests: XCTestCase {
 
         settings.isEnabled = true
         controller.refresh()
+
         XCTAssertEqual(controller.state, .ineffective,
-                       "Éteindre puis rallumer ne prouve pas que la panne est résolue.")
+                       "Switching off and back on does not prove the fault is gone.")
         controller.stop()
     }
 
     func testAnIsolatedFailureAfterASuccessDoesNotRaiseTheAlarm() async {
-        // échec, échec -> alerte ; succès -> levée ET compteur remis à zéro ;
-        // un échec isolé ensuite ne doit donc PAS ré-alerter immédiatement.
         let (controller, _, _) = makeController(idle: [300, 300, 300, 300, 300, 0, 300, 300],
                                                 settings: makeSettings())
         await controller.tick()
         await controller.tick()
         XCTAssertEqual(controller.state, .ineffective)
+
         await controller.tick()
         XCTAssertEqual(controller.state, .active)
+
         await controller.tick()
+
         XCTAssertEqual(controller.state, .active,
-                       "Après un succès, le compteur repart de zéro : un échec isolé ne ré-alerte pas.")
+                       "After a success the count restarts, so an isolated miss does not re-alarm.")
     }
 
     func testAlarmSurvivesTheUserComingBack() async {
-        // Deux échecs pendant l'absence -> alerte. Puis l'utilisateur revient
-        // (inactivité retombée sous le seuil) : l'alerte doit RESTER, rien n'a
-        // prouvé que la panne était résolue.
         let (controller, _, _) = makeController(idle: [300, 300, 300, 300, 100],
                                                 settings: makeSettings())
         await controller.tick()
@@ -226,52 +251,56 @@ final class PresenceControllerTests: XCTestCase {
         XCTAssertEqual(controller.state, .ineffective)
 
         await controller.tick()
+
         XCTAssertEqual(controller.state, .ineffective,
-                       "Le retour de l'utilisateur ne prouve pas que la panne est résolue.")
+                       "The user coming back does not prove the fault is gone.")
     }
 
     func testRecoversOncePermissionIsGranted() async {
         let permission = MutablePermission(isGranted: false)
-        let settings = makeSettings()
         let jiggler = SpyJiggler()
-        let controller = PresenceController(
-            idleMonitor: FakeIdleMonitor([300, 0]),
-            jiggler: jiggler,
-            permission: permission,
-            settings: settings,
-            verificationDelay: .zero
-        )
+        let controller = PresenceController(idleMonitor: FakeIdleMonitor([300, 0]),
+                                            jiggler: jiggler,
+                                            permission: permission,
+                                            settings: makeSettings(),
+                                            verificationDelay: .zero)
 
         await controller.tick()
         XCTAssertEqual(controller.state, .needsPermission)
         XCTAssertEqual(jiggler.jiggleCount, 0)
 
-        permission.isGranted = true   // l'utilisateur coche la case dans les Réglages
+        permission.isGranted = true
         await controller.tick()
+
         XCTAssertEqual(controller.state, .active,
-                       "L'app doit se rétablir seule dès que la permission est accordée.")
+                       "The app must recover on its own as soon as the permission is granted.")
         XCTAssertEqual(jiggler.jiggleCount, 1)
     }
 
     func testDetectsAFailedVerificationAtANonDefaultThreshold() async {
-        // Seuil 120 s. Chaque vérification lit 150 s : toujours au-dessus du seuil,
-        // donc chaque mouvement est un échec. Deux d'affilée -> alerte.
         let (controller, _, _) = makeController(idle: [300, 150, 300, 150],
                                                 settings: makeSettings(threshold: 120))
+
         await controller.tick()
         await controller.tick()
+
         XCTAssertEqual(controller.state, .ineffective,
-                       "La vérification doit comparer au seuil réglé, pas à une valeur codée en dur.")
+                       "Verification must compare against the configured threshold, not a hard-coded one.")
     }
 
     func testRefreshArmsTheLoopEvenWithoutPermission() {
         let (controller, _, _) = makeController(idle: [300, 0],
-                                                permissionGranted: false, settings: makeSettings())
+                                                permissionGranted: false,
+                                                settings: makeSettings())
+
         controller.refresh()
+
         XCTAssertEqual(controller.state, .needsPermission)
         XCTAssertTrue(controller.isRunning,
-                      "La boucle doit tourner même sans permission : c'est elle qui détectera son octroi.")
+                      "The loop must run even without permission: it is what detects the grant.")
+
         controller.stop()
+
         XCTAssertFalse(controller.isRunning)
     }
 }

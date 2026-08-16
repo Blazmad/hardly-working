@@ -2,14 +2,14 @@
 import CoreGraphics
 import Foundation
 
-/// Le compteur candidat pour l'app : ~0 correspond à kCGAnyInputEventType
-/// (n'importe quel événement clavier ou souris).
+/// The counter the app is considering: ~0 is kCGAnyInputEventType, meaning any
+/// keyboard or mouse event.
 func cgIdleSeconds() -> TimeInterval {
     let anyInput = CGEventType(rawValue: ~0)!
     return CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: anyInput)
 }
 
-/// La référence connue : le compteur que lit déjà la version bash en production.
+/// The known reference: the counter the bash version already reads in production.
 func ioregIdleSeconds() -> TimeInterval {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
@@ -27,7 +27,7 @@ func ioregIdleSeconds() -> TimeInterval {
     return nanoseconds / 1_000_000_000
 }
 
-/// Déplace le curseur d'un pixel puis le ramène. Aucun clic.
+/// Moves the cursor by one pixel and back. No click.
 func jiggleOnce() {
     let origin = CGEvent(source: nil)?.location ?? .zero
     for point in [CGPoint(x: origin.x + 1, y: origin.y), origin] {
