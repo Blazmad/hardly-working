@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hardly Working — carte d'aperçu</title>
+<!--
+  Gabarit de l'image d'aperçu Open Graph, rendu en PNG 1200×630 par
+  scripts/make-og-image.sh. Écrit en HTML plutôt que dessiné à la main pour
+  reprendre littéralement les couleurs, les polices et le ton de la landing
+  page, dans le même moteur de rendu.
+
+  Traitement sombre assumé : une carte d'aperçu s'affiche aussi bien sur fond
+  clair que sombre selon la messagerie, et la version sombre est celle qui
+  détache le mieux l'ambre et la pastille verte.
+-->
+<style>
+  :root {
+    --amber:      #E8944A;
+    --amber-deep: #C9702B;
+    --ink:        #F4EDE5;
+    --ink-soft:   #A99C90;
+    --ink-faint:  #7C7168;
+    --ground:     #14110E;
+    --panel:      #1C1815;
+    --line:       #2E2721;
+    --green:      #30D158;
+
+    --display: "New York", ui-serif, Iowan Old Style, Palatino, Georgia, serif;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1200px; height: 630px;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--ui);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Même halo ambré que l'atmosphère de la landing page. */
+  .atmos {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(760px 460px at 12% -10%, rgba(232,148,74,.20), transparent 62%),
+      radial-gradient(620px 400px at 96% 108%, rgba(201,112,43,.16), transparent 60%);
+  }
+
+  .frame {
+    position: relative;
+    height: 100%;
+    padding: 74px 80px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto 1fr auto;
+    column-gap: 56px;
+    align-items: start;
+  }
+
+  /* ── Marque ── */
+  .brand {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .brand img { width: 62px; height: 62px; display: block; }
+  .brand span {
+    font-size: 30px; font-weight: 600; letter-spacing: -0.015em;
+  }
+
+  /* ── Accroche ── */
+  .pitch { grid-column: 1; align-self: center; padding-top: 6px; }
+  h1 {
+    font-family: var(--display);
+    font-size: 82px;
+    line-height: 1.02;
+    letter-spacing: -0.028em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+  h1 em { color: var(--amber); font-style: italic; }
+  .sub {
+    margin-top: 26px;
+    font-size: 27px;
+    line-height: 1.42;
+    color: var(--ink-soft);
+    max-width: 26ch;
+  }
+
+  /* ── Démonstration : le statut qui ment ── */
+  .demo {
+    grid-column: 2; align-self: center;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    padding: 40px 46px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,.7);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 14px 26px;
+    border-radius: 999px;
+    background: rgba(48,209,88,.12);
+    border: 1px solid rgba(48,209,88,.3);
+    font-size: 25px; font-weight: 500;
+  }
+  .dot {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 16px rgba(48,209,88,.75);
+  }
+  .away {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--ink-faint);
+    letter-spacing: .01em;
+  }
+
+  /* ── Pied ── */
+  .foot {
+    grid-column: 1 / -1; align-self: end;
+    display: flex; align-items: baseline; gap: 16px;
+    font-size: 20px;
+    color: var(--ink-faint);
+  }
+  .foot .sep { color: var(--line); }
+  .foot .url { color: var(--amber); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="atmos"></div>
+
+<div class="frame">
+
+  <div class="brand">
+    <img src="icon-256.png" alt="">
+    <span>Hardly Working</span>
+  </div>
+
+  <div class="pitch">
+    <h1>Your <em>green dot</em> doesn't need you.</h1>
+    <p class="sub">A tiny macOS menu bar app that keeps your status green while you're somewhere else.</p>
+  </div>
+
+  <div class="demo">
+    <span class="pill"><span class="dot"></span> Available</span>
+    <span class="away">Away for 47 minutes</span>
+  </div>
+
+  <div class="foot">
+    <span class="url">blazmad.github.io/hardly-working</span>
+    <span class="sep">·</span>
+    <span>Free</span>
+    <span class="sep">·</span>
+    <span>macOS 14+</span>
+    <span class="sep">·</span>
+    <span>Notarized by Apple</span>
+  </div>
+
+</div>
+
+</body>
+</html>
