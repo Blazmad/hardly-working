@@ -34,6 +34,17 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(reloaded.idleThresholdSeconds, 600)
     }
 
+    func testInvalidPersistedThresholdFallsBackToDefault() {
+        for invalid in [0, -60, 61, 7_200] {
+            defaults.set(invalid, forKey: "idleThresholdSeconds")
+
+            let settings = Settings(defaults: defaults)
+
+            XCTAssertEqual(settings.idleThresholdSeconds, 240,
+                           "persisted \(invalid) must not reach the timer")
+        }
+    }
+
     func testOfferedThresholdsIncludeTheDefault() {
         XCTAssertTrue(Settings.availableThresholds.contains(240))
         XCTAssertEqual(Settings.availableThresholds, [120, 180, 240, 300, 600])

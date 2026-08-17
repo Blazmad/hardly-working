@@ -4,7 +4,7 @@
 
 Quand Clément s'éloigne de son Mac, Teams bascule son statut en « away » (pastille orange) au bout de quelques minutes. Il ne veut pas que son absence soit visible : l'objectif est de **maintenir la pastille verte pendant qu'il est loin du poste**, sans y penser et sans que ça interfère quand il utilise réellement la machine.
 
-Une première version en bash existe (`Code/teams-presence/`, fonctionnelle et mesurée en production). Elle résout le problème mais souffre de trois fragilités structurelles, toutes liées au fait que c'est un script lancé par `launchd` :
+Une première version en bash existe (`Code/teams-presence/`, fonctionnelle). Elle résout le problème mais souffre de trois fragilités structurelles, toutes liées au fait que c'est un script lancé par `launchd` :
 
 1. **Dépendance à Homebrew** — nécessite `cliclick`, à installer séparément ; impossible à distribuer à quelqu'un d'autre sans lui faire installer Homebrew.
 2. **Permission Accessibilité instable** — la permission est attachée au chemin versionné du binaire (`.../cliclick/5.1/bin/cliclick`) ; un `brew upgrade cliclick` la révoque silencieusement. Aucune popup ne peut la redemander (un job `launchd` sans interface ne peut pas afficher de dialogue).
@@ -47,7 +47,7 @@ Découpage en unités courtes à responsabilité unique, avec la logique de déc
 
 ### Le mouvement de souris
 
-Envoi d'un événement souris natif : déplacement de +1 pixel puis retour de −1 pixel, posté sur le tap d'événements HID. C'est le mécanisme qu'utilise `cliclick` en interne, et la v1 a **mesuré en production** qu'il réinitialise effectivement le compteur d'inactivité et maintient Teams en vert. Le risque technique est donc faible, mais reste à confirmer explicitement.
+Envoi d'un événement souris natif : déplacement de +1 pixel puis retour de −1 pixel, posté sur le tap d'événements HID. C'est le mécanisme qu'utilise `cliclick` en interne, et la v1 a **mesuré** qu'il réinitialise effectivement le compteur d'inactivité et maintient Teams en vert. Le risque technique est donc faible, mais reste à confirmer explicitement.
 
 Le mouvement doit rester imperceptible (1 pixel, aller-retour immédiat) et ne **jamais** émettre de clic.
 
@@ -155,6 +155,6 @@ Une fois la v2 installée et vérifiée :
 | Risque | Gravité | Traitement |
 |---|---|---|
 | L'API `CGEventSource` ne renvoie pas le compteur attendu | bloquant | vérifié en tâche 1, croisé avec `ioreg` avant de construire dessus |
-| L'événement synthétisé ne réinitialise pas le compteur | bloquant | même mécanisme que `cliclick`, déjà mesuré en production sur la v1 ; confirmé en tâche 1 |
+| L'événement synthétisé ne réinitialise pas le compteur | bloquant | même mécanisme que `cliclick`, déjà mesuré sur la v1 ; confirmé en tâche 1 |
 | macOS durcit encore les permissions | latent | l'auto-vérification rend la panne visible au lieu de silencieuse |
 | Le nom se révèle déjà déposé | faible | recherche effectuée, aucun conflit ; à revérifier avant publication publique |

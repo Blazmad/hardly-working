@@ -28,6 +28,12 @@ targets:
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        # Notarization requires the hardened runtime; setting it here keeps a
+        # plain `xcodebuild -configuration Release` aligned with what
+        # scripts/build-dmg.sh enforces at codesign time (--options runtime).
+        Release:
+          ENABLE_HARDENED_RUNTIME: YES
 
   HardlyWorkingTests:
     type: bundle.unit-test

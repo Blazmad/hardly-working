@@ -14,14 +14,14 @@
   > Correction d'audit : une version antérieure de ce plan justifiait ce plancher par `MenuBarExtra` et `SMAppService`. C'est faux — ces deux API sont disponibles dès **macOS 13.0** (vérifié dans `SwiftUI.swiftinterface` et l'en-tête `SMAppService.h`). Le plancher 14.0 reste le bon choix, mais pour cette raison-là. Si un jour on veut descendre à 13.0, c'est le `.onChange` à deux paramètres qu'il faudra remplacer, rien d'autre.
 - **Identifiant de paquet** : `com.madzar.hardlyworking`. **Nom produit affiché** : `Hardly Working`. **Nom de cible et de module** : `HardlyWorking` (sans espace).
 - **Équipe de signature** : `DEVELOPMENT_TEAM = 272BX4J7SG`, `CODE_SIGN_STYLE = Automatic`. Le certificat *Apple Development* valide (jusqu'au 24/03/2027) appartient à cette équipe.
-  > ⚠️ **Ne pas confondre les deux identifiants du certificat.** Son nom affiché est `Apple Development: c.madzar@hotmail.fr (X4857B4L79)`, mais `X4857B4L79` **n'est pas** le Team ID — c'est le champ `OU` du certificat qui l'est, soit `272BX4J7SG`. Une première version de ce plan utilisait la parenthèse et la construction échouait sur `No "Mac Development" signing certificate matching team ID "X4857B4L79"`. Pour retrouver la bonne valeur : `security find-certificate -a -c "Apple Development" -p | openssl x509 -noout -subject` et lire `OU =`.
+  > ⚠️ **Ne pas confondre les deux identifiants du certificat.** Son nom affiché est `Apple Development: <apple-id> (X4857B4L79)`, mais `X4857B4L79` **n'est pas** le Team ID — c'est le champ `OU` du certificat qui l'est, soit `272BX4J7SG`. Une première version de ce plan utilisait la parenthèse et la construction échouait sur `No "Mac Development" signing certificate matching team ID "X4857B4L79"`. Pour retrouver la bonne valeur : `security find-certificate -a -c "Apple Development" -p | openssl x509 -noout -subject` et lire `OU =`.
 - **`LSUIElement = YES`** — app agent : aucune icône dans le Dock, aucune fenêtre principale.
 - **Toutes les chaînes visibles par l'utilisateur sont en anglais.**
 - **Jamais de clic.** `Jiggler` ne produit que des événements `.mouseMoved`, jamais de `mouseDown`/`mouseUp`.
 - **Intervalle de vérification : 20 s**, constante interne, jamais exposée dans l'interface. **Seuil d'inactivité** : défaut 240 s, choix offerts 120 / 180 / 240 / 300 / 600 s.
 - **Aucune dépendance runtime dans l'app livrée.** XcodeGen et Homebrew sont des outils de construction uniquement — l'app expédiée ne dépend que de macOS.
 - **`project.yml` est la source de vérité** ; `HardlyWorking.xcodeproj` est généré et git-ignoré. Ne jamais éditer le `.xcodeproj` à la main.
-- **Chemin du projet** : `/Users/clementmadzar/Documents/Madzar/Code/hardly-working`.
+- **Chemin du projet** : la racine du clone `hardly-working/`.
 
 ---
 
@@ -82,7 +82,7 @@ func cgIdleSeconds() -> TimeInterval {
     return CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: anyInput)
 }
 
-/// La référence connue : le compteur que lit déjà la version bash en production.
+/// La référence connue : le compteur que lit déjà la version bash (v1).
 func ioregIdleSeconds() -> TimeInterval {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/sbin/ioreg")
@@ -132,7 +132,7 @@ print(after < before ? "PASS: the counter dropped." : "FAIL: the counter did not
 
 - [ ] **Step 2: Lancer le spike sans toucher souris ni clavier**
 
-Run: `cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working && swift spikes/idle-check.swift`
+Run: `cd "$(git rev-parse --show-toplevel)" && swift spikes/idle-check.swift`
 
 **Important :** ne rien toucher pendant l'exécution (~15 s). Une frappe ou un mouvement de souris pendant le test remettrait les compteurs à zéro et invaliderait la mesure. Si les valeurs affichées restent proches de 0 tout du long, c'est que quelqu'un a touché la machine — relancer.
 
@@ -149,7 +149,7 @@ Expected:
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add spikes/idle-check.swift
 git commit -m "spike: prouve que CGEventSource lit le compteur d'inactivité et qu'un CGEvent le réinitialise"
 ```
@@ -271,7 +271,7 @@ final class PlaceholderTests: XCTestCase {
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 xcodegen generate
 xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -configuration Release -derivedDataPath build build
 ```
@@ -303,7 +303,7 @@ Expected: une icône de tasse apparaît dans la barre de menus en haut à droite
 - [ ] **Step 8: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add project.yml .gitignore Sources Tests
 git commit -m "feat: squelette du projet — app agent avec icône de barre de statut"
 ```
@@ -453,7 +453,7 @@ struct LoginItem: LoginItemManaging {
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 xcodegen generate && xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -configuration Release -derivedDataPath build build
 ```
 
@@ -462,7 +462,7 @@ Expected: `** BUILD SUCCEEDED **`.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add Sources
 git commit -m "feat: adaptateurs système (inactivité, mouvement souris, permission, démarrage auto)"
 ```
@@ -558,7 +558,7 @@ final class SettingsTests: XCTestCase {
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 xcodegen generate && xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -destination 'platform=macOS' -derivedDataPath build test
 ```
 
@@ -627,7 +627,7 @@ Expected: `** TEST SUCCEEDED **`, 7 tests passants (4 de décision + 3 de régla
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add Sources/JiggleDecision.swift Sources/Settings.swift Tests
 git commit -m "feat: logique de décision et réglages persistés, couverts par des tests"
 ```
@@ -823,7 +823,7 @@ final class PresenceControllerTests: XCTestCase {
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 xcodegen generate && xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -destination 'platform=macOS' -derivedDataPath build test
 ```
 
@@ -992,7 +992,7 @@ Expected: `** TEST SUCCEEDED **`, 20 tests passants (5 JiggleDecisionTests + 3 S
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add Sources/PresenceController.swift Tests/PresenceControllerTests.swift
 git commit -m "feat: machine à états avec auto-vérification du mouvement (panne visible, jamais silencieuse)"
 ```
@@ -1158,7 +1158,7 @@ struct HardlyWorkingApp: App {
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 xcodegen generate && xcodebuild -project HardlyWorking.xcodeproj -scheme HardlyWorking -destination 'platform=macOS' -derivedDataPath build test
 ```
 
@@ -1181,7 +1181,7 @@ Quitter l'app à la fin de la vérification.
 - [ ] **Step 5: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add Sources
 git commit -m "feat: menu de la barre de statut, icône réactive à l'état, câblage complet"
 ```
@@ -1260,7 +1260,7 @@ ls -lh "$DMG_PATH"
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 chmod +x scripts/build-dmg.sh
 printf "dist/\n" >> .gitignore
 ```
@@ -1275,7 +1275,7 @@ Expected: le script se termine sur `DMG prêt : …/dist/Hardly Working.dmg` et 
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 hdiutil attach "dist/Hardly Working.dmg"
 cp -R "/Volumes/Hardly Working/Hardly Working.app" /Applications/
 hdiutil detach "/Volumes/Hardly Working"
@@ -1335,7 +1335,7 @@ Expected: aucun saut de curseur perceptible, aucun clic parasite, rien ne se sé
 - [ ] **Step 9: Commit**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add scripts/build-dmg.sh .gitignore
 git commit -m "feat: script de construction du DMG et vérification de bout en bout"
 ```
@@ -1430,7 +1430,7 @@ Les deux ne doivent jamais tourner en même temps.
 
 Run:
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/teams-presence
+cd ../teams-presence
 bash uninstall.sh
 launchctl list | grep teams-presence || echo "Service bash bien arrêté."
 ```
@@ -1453,11 +1453,11 @@ Insérer ces lignes juste après le titre `# teams-presence` de `Code/teams-pres
 - [ ] **Step 4: Commit dans les deux dépôts**
 
 ```bash
-cd /Users/clementmadzar/Documents/Madzar/Code/hardly-working
+cd "$(git rev-parse --show-toplevel)"
 git add README.md
 git commit -m "docs: README d'installation, d'utilisation et de construction"
 
-cd /Users/clementmadzar/Documents/Madzar/Code/teams-presence
+cd ../teams-presence
 git add README.md
 git commit -m "docs: renvoie vers Hardly Working, qui remplace ce script"
 ```

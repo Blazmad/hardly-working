@@ -5,3 +5,15 @@ DerivedData/
 *.dmg
 *.xcodeproj
 dist/
+
+# Credential-shaped files: the repo is public, a stray `git add -A` must not
+# be able to publish them (GitHub push protection is the second layer).
+*.p12
+*.p8
+*.pem
+*.key
+*.cer
+*.mobileprovision
+*.provisionprofile
+.env
+.env.*

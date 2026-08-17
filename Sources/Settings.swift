@@ -29,6 +29,11 @@ final class Settings: ObservableObject {
             Key.idleThreshold: Self.defaultThresholdSeconds,
         ])
         self.isEnabled = defaults.bool(forKey: Key.isEnabled)
-        self.idleThresholdSeconds = defaults.integer(forKey: Key.idleThreshold)
+        let stored = defaults.integer(forKey: Key.idleThreshold)
+        /// The plist is writable by any same-user process (`defaults write`);
+        /// only values from `availableThresholds` may reach the timer.
+        self.idleThresholdSeconds = Self.availableThresholds.contains(stored)
+            ? stored
+            : Self.defaultThresholdSeconds
     }
 }

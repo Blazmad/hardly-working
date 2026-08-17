@@ -104,3 +104,6 @@ fi
 echo ""
 echo "DMG ready: $DMG_PATH"
 ls -lh "$DMG_PATH"
+# Paste this hash into the release notes: GitHub release assets are mutable,
+# a published SHA-256 is the only out-of-band integrity reference users get.
+shasum -a 256 "$DMG_PATH"

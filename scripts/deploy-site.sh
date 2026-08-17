@@ -26,6 +26,12 @@ trap cleanup EXIT
 
 echo "==> Fetching $BRANCH"
 git fetch origin "$BRANCH" --quiet
+# The reset below rewinds the local branch ref: unpushed local commits on
+# gh-pages would vanish silently (recoverable only via reflog until expiry).
+if [[ -n "$(git rev-list "origin/$BRANCH..$BRANCH" 2>/dev/null)" ]]; then
+    echo "Local $BRANCH has unpushed commits - push or drop them first" >&2
+    exit 1
+fi
 git worktree add --quiet "$WORKTREE" "$BRANCH"
 git -C "$WORKTREE" reset --hard --quiet "origin/$BRANCH"
 
