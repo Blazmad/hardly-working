@@ -45,6 +45,14 @@ final class SettingsTests: XCTestCase {
         }
     }
 
+    func testInvalidPersistedThresholdIsHealedInTheStore() {
+        defaults.set(0, forKey: "idleThresholdSeconds")
+
+        _ = Settings(defaults: defaults)
+
+        XCTAssertEqual(defaults.integer(forKey: "idleThresholdSeconds"), 240)
+    }
+
     func testOfferedThresholdsIncludeTheDefault() {
         XCTAssertTrue(Settings.availableThresholds.contains(240))
         XCTAssertEqual(Settings.availableThresholds, [120, 180, 240, 300, 600])

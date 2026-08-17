@@ -20,6 +20,15 @@ cd "$PROJECT_DIR"
 [[ -d "$SITE" ]] || { echo "Not found: $SITE" >&2; exit 1; }
 [[ -f "$SITE/index.html" ]] || { echo "No index.html in $SITE" >&2; exit 1; }
 
+# rsync publishes site/ from DISK, not from git: an untracked or git-ignored
+# file dropped there (a stray credential, say) would go live on gh-pages.
+STRAY="$(git status --porcelain --ignored -- "$SITE" | grep -E '^(\?\?|!!)' | grep -v '\.DS_Store' || true)"
+if [[ -n "$STRAY" ]]; then
+    echo "site/ contains files unknown to git - commit or remove them first:" >&2
+    echo "$STRAY" >&2
+    exit 1
+fi
+
 WORKTREE="$(mktemp -d)"
 cleanup() { git worktree remove --force "$WORKTREE" 2>/dev/null || true; }
 trap cleanup EXIT
@@ -37,7 +46,7 @@ git -C "$WORKTREE" reset --hard --quiet "origin/$BRANCH"
 
 echo "==> Copying the site"
 # --delete: a file removed from site/ also disappears from the live site.
-rsync -a --delete --exclude '.git' "$SITE/" "$WORKTREE/"
+rsync -a --delete --exclude '.git' --exclude '.DS_Store' "$SITE/" "$WORKTREE/"
 # .nojekyll tells GitHub Pages to serve the files as-is, without running Jekyll.
 touch "$WORKTREE/.nojekyll"
 

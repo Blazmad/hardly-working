@@ -32,8 +32,13 @@ final class Settings: ObservableObject {
         let stored = defaults.integer(forKey: Key.idleThreshold)
         /// The plist is writable by any same-user process (`defaults write`);
         /// only values from `availableThresholds` may reach the timer.
-        self.idleThresholdSeconds = Self.availableThresholds.contains(stored)
-            ? stored
-            : Self.defaultThresholdSeconds
+        if Self.availableThresholds.contains(stored) {
+            self.idleThresholdSeconds = stored
+        } else {
+            self.idleThresholdSeconds = Self.defaultThresholdSeconds
+            /// `didSet` does not fire during init: heal the store explicitly,
+            /// or the poisoned value would survive until the next menu change.
+            defaults.set(Self.defaultThresholdSeconds, forKey: Key.idleThreshold)
+        }
     }
 }

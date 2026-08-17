@@ -615,6 +615,8 @@ final class Settings: ObservableObject {
 }
 ```
 
+  > Correction d'audit (2026-08-17) : ce code relit le seuil **sans le borner**. La version livrée (`Sources/Settings.swift`) rejette toute valeur hors `availableThresholds` et répare la plist — celle-ci est modifiable par n'importe quel processus de la session (`defaults write com.madzar.hardlyworking idleThresholdSeconds -int 0`) et une valeur arbitraire ne doit jamais atteindre le timer. Les décomptes de tests du plan datent d'avant ce correctif (la suite compte deux SettingsTests de plus).
+
 - [ ] **Step 5: Lancer les tests et vérifier qu'ils passent**
 
 Run:
@@ -1386,7 +1388,7 @@ L'icône reflète l'état : tasse pleine (actif), tasse vide (en pause), triangl
 
 ### Régler le seuil
 
-Microsoft ne publie pas le délai exact au bout duquel Teams bascule en « away » (~5 min d'après nos mesures). Le défaut de 4 min passe juste en dessous. Si votre statut bascule quand même, descendre à 3 ou 2 min.
+Microsoft ne publie pas le délai exact au bout duquel Teams bascule en « away » (~5 min, estimation jamais mesurée). Le défaut de 4 min passe juste en dessous. Si votre statut bascule quand même, descendre à 3 ou 2 min.
 
 ## À savoir
 
@@ -1453,7 +1455,7 @@ Insérer ces lignes juste après le titre `# teams-presence` de `Code/teams-pres
 - [ ] **Step 4: Commit dans les deux dépôts**
 
 ```bash
-cd "$(git rev-parse --show-toplevel)"
+cd ../hardly-working
 git add README.md
 git commit -m "docs: README d'installation, d'utilisation et de construction"
 

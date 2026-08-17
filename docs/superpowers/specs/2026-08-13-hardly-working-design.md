@@ -108,7 +108,7 @@ Quand l'app est en pause, la minuterie est **arrêtée** (aucun sondage en tâch
 
 ## Effet de bord assumé
 
-Le compteur d'inactivité réinitialisé est aussi celui qui déclenche la mise en veille système : **le Mac ne se met plus en veille tout seul** tant que l'app est active. Déjà constaté et accepté sur la v1. L'interrupteur du menu rend désormais cet effet **contrôlable** (couper en partant le soir), ce qui n'était pas le cas avant.
+Le compteur d'inactivité réinitialisé est aussi celui qui déclenche la mise en veille système : **le Mac ne se met plus en veille tout seul** tant que l'app est active. Déjà accepté sur la v1. L'interrupteur du menu rend désormais cet effet **contrôlable** (couper en partant le soir), ce qui n'était pas le cas avant.
 
 ## Distribution
 
