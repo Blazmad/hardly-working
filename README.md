@@ -20,7 +20,7 @@ After each nudge the app waits a fraction of a second, long enough for macOS to 
 
 ## Installation
 
-1. Open `Hardly Working.dmg` and drag the app into Applications.
+1. Open the downloaded `HardlyWorking-*.dmg` and drag the app into Applications.
 2. Launch the app — a cup icon appears in your menu bar.
 3. **Grant the Accessibility permission** (required). On first launch the app doesn't have it yet, so the icon goes straight to the alert triangle — it won't open anything on its own. Click the icon, then "Open Accessibility Settings…" in the menu: that triggers the system prompt and opens System Settings → Privacy & Security. Landing exactly on the "Accessibility" row isn't guaranteed across macOS versions, so you may need to scroll. Tick "Hardly Working". Without this permission, macOS blocks all synthetic mouse movement.
 
@@ -57,7 +57,18 @@ Unchecking and re-checking "Active" never clears the alert on its own: only a nu
 
 A confusing symptom: "Hardly Working" is listed under System Settings → Privacy & Security → Accessibility, the box is ticked, and yet the app still shows the alert. Unticking and re-ticking changes nothing.
 
-The cause: macOS doesn't just record "this app is allowed", it records the **code signature** of the allowed app. If the app's signature has changed since (a new certificate, for instance), the entry keeps the same name and the same ticked box, but **no longer matches the installed binary**. The tick is just flipping a switch on a stale record.
+The cause: macOS doesn't just record "this app is allowed", it records the app's **designated requirement** — an expression pinning the bundle id, the Apple anchor, the certificate-type marker OIDs and the Team ID:
+
+```
+identifier "com.madzar.hardlyworking" and anchor apple generic
+and certificate 1[field.1.2.840.113635.100.6.2.6]
+and certificate leaf[field.1.2.840.113635.100.6.1.13]
+and certificate leaf[subject.OU] = "272BX4J7SG"
+```
+
+When a new build no longer satisfies that expression, the entry keeps the same name and the same ticked box but **no longer matches the installed binary**. The tick is just flipping a switch on a stale record.
+
+Renewing the signing certificate does *not* cause this. Measured on 2026-08-17: replacing the Developer ID certificate (old intermediate → G2, new private key) left the requirement byte-identical and the grant intact across the upgrade. What breaks it is a change of Team ID, or moving between certificate classes — an *Apple Development* build and a *Developer ID* build pin different marker OIDs.
 
 The fix is to delete the entry so a fresh one gets created:
 
@@ -67,7 +78,7 @@ tccutil reset Accessibility com.madzar.hardlyworking
 
 Then relaunch the app and grant the permission again. (Manual equivalent: select the entry in the list and click the `−` button, rather than unticking the box.)
 
-This only happens after a signature change. In normal use the permission never has to be granted again, including across updates.
+This only happens when the designated requirement changes. In normal use the permission never has to be granted again, including across updates.
 
 ## Building from source
 
