@@ -24,6 +24,24 @@ NOTARY_PROFILE="hardly-working"
 
 cd "$PROJECT_DIR"
 
+# Checked BEFORE the build so a broken credential costs a second, not a build.
+# A Developer ID signature without notarization is the worst outcome: macOS
+# shows a dialog with no Open button, so refuse to produce one by accident.
+# One probe only - it authenticates against Apple, so it is not free.
+NOTARIZE=0
+if [[ -n "$DEV_ID" ]]; then
+    if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+        NOTARIZE=1
+    elif [[ "${SKIP_NOTARIZATION:-}" == "1" ]]; then
+        echo "==> SKIP_NOTARIZATION=1: the DMG will be signed but NOT notarized"
+    else
+        echo "Notarization profile \"$NOTARY_PROFILE\" is missing or rejected." >&2
+        echo "Recreate it with: xcrun notarytool store-credentials \"$NOTARY_PROFILE\"" >&2
+        echo "Or re-run with SKIP_NOTARIZATION=1 to build without notarizing." >&2
+        exit 1
+    fi
+fi
+
 echo "==> Generating the Xcode project"
 xcodegen generate
 
@@ -55,7 +73,7 @@ codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 # The app is notarized and stapled BEFORE it goes into the DMG. Otherwise the
 # DMG would hold an unstapled app, and once copied to /Applications macOS would
 # need network access to verify the notarization on first launch.
-if [[ -n "$DEV_ID" ]] && xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+if [[ "$NOTARIZE" == 1 ]]; then
     echo "==> Notarizing the app"
     ditto -c -k --keepParent "$APP_PATH" "$BUILD_DIR/app-to-notarize.zip"
     xcrun notarytool submit "$BUILD_DIR/app-to-notarize.zip" \
@@ -83,7 +101,7 @@ if [[ -n "$DEV_ID" ]]; then
     echo "==> Signing the DMG"
     codesign --force --timestamp --sign "$DEV_ID" "$DMG_PATH"
 
-    if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
+    if [[ "$NOTARIZE" == 1 ]]; then
         echo "==> Notarizing the DMG"
         xcrun notarytool submit "$DMG_PATH" \
               --keychain-profile "$NOTARY_PROFILE" --wait
@@ -96,8 +114,7 @@ if [[ -n "$DEV_ID" ]]; then
         echo "==> Gatekeeper verdict"
         spctl -a -t open --context context:primary-signature -v "$DMG_PATH"
     else
-        echo "==> Notarization credentials missing (profile \"$NOTARY_PROFILE\"):"
-        echo "    DMG signed but NOT notarized - macOS will show a warning."
+        echo "==> DMG signed but NOT notarized - macOS will show a warning."
     fi
 fi
 
