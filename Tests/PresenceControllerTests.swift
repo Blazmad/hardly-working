@@ -11,8 +11,12 @@ private final class FakeIdleMonitor: IdleMonitoring {
         self.readings = readings
     }
 
+    /// Lets a test observe that the counter was read at all, which is how the
+    /// polling loop makes itself visible.
+    var onRead: (() -> Void)?
+
     func idleSeconds() -> TimeInterval {
-        defer { callCount += 1 }
+        defer { callCount += 1; onRead?() }
         guard !readings.isEmpty else { return 0 }
         return callCount < readings.count ? readings[callCount] : readings[readings.count - 1]
     }
@@ -21,8 +25,38 @@ private final class FakeIdleMonitor: IdleMonitoring {
 private final class SpyJiggler: Jiggling {
     private(set) var jiggleCount = 0
 
-    func jiggle() {
+    @discardableResult
+    func jiggle() -> Bool {
         jiggleCount += 1
+        return true
+    }
+}
+
+/// Stands in for the case where the cursor position cannot be read: the jiggler
+/// posts nothing at all and says so.
+private final class FailingJiggler: Jiggling {
+    private(set) var jiggleCount = 0
+
+    @discardableResult
+    func jiggle() -> Bool {
+        jiggleCount += 1
+        return false
+    }
+}
+
+/// Reports one value until a test changes it, so a test can count reads without
+/// its expectations depending on how many the implementation happens to make.
+private final class ControllableIdleMonitor: IdleMonitoring {
+    var seconds: TimeInterval
+    private(set) var callCount = 0
+
+    init(_ seconds: TimeInterval) {
+        self.seconds = seconds
+    }
+
+    func idleSeconds() -> TimeInterval {
+        callCount += 1
+        return seconds
     }
 }
 
@@ -286,6 +320,64 @@ final class PresenceControllerTests: XCTestCase {
 
         XCTAssertEqual(controller.state, .ineffective,
                        "Verification must compare against the configured threshold, not a hard-coded one.")
+    }
+
+    func testDoesNotJiggleBelowATenMinuteThreshold() async {
+        let (controller, _, jiggler) = makeController(idle: [590, 0],
+                                                      settings: makeSettings(threshold: 600))
+
+        await controller.tick()
+
+        XCTAssertEqual(jiggler.jiggleCount, 0,
+                       "590s is below a threshold set to 600s; a hard-coded 120 would act here.")
+    }
+
+    /// A nudge that was never posted must not be followed by a verification read.
+    /// The counter can fall for a reason of its own - the user coming back - and
+    /// crediting that would clear an alert on someone else's evidence.
+    func testANudgeThatWasNeverPostedIsNotVerifiedOrCredited() async {
+        let monitor = ControllableIdleMonitor(300)
+        let jiggler = FailingJiggler()
+        let controller = PresenceController(idleMonitor: monitor,
+                                            jiggler: jiggler,
+                                            permission: StubPermission(isGranted: true),
+                                            settings: makeSettings(),
+                                            verificationDelay: .zero)
+
+        await controller.tick()
+
+        XCTAssertEqual(jiggler.jiggleCount, 1)
+        XCTAssertEqual(monitor.callCount, 1,
+                       "Nothing was posted, so there is no verification to read back.")
+
+        await controller.tick()
+
+        XCTAssertEqual(controller.state, .ineffective,
+                       "Two nudges that never left the machine must raise the alert.")
+    }
+
+    /// `isRunning` only proves a Timer object exists. Firing it proves it was put
+    /// on a run loop - a version that built one without scheduling it once shipped.
+    func testRefreshPutsTheLoopOnTheRunLoopSoItActuallyFires() async {
+        let monitor = FakeIdleMonitor([0])
+        let controller = PresenceController(idleMonitor: monitor,
+                                            jiggler: SpyJiggler(),
+                                            permission: StubPermission(isGranted: true),
+                                            settings: makeSettings(),
+                                            verificationDelay: .zero,
+                                            checkInterval: 0.01)
+
+        let polled = expectation(description: "the loop reads the idle counter on its own")
+        polled.assertForOverFulfill = false
+        monitor.onRead = { polled.fulfill() }
+
+        controller.refresh()
+        // Awaiting frees the main actor, which the timer's Task needs to run.
+        await fulfillment(of: [polled], timeout: 2)
+        controller.stop()
+
+        XCTAssertGreaterThan(monitor.callCount, 0,
+                             "An unscheduled Timer never fires, so the counter would never be read again.")
     }
 
     func testRefreshArmsTheLoopEvenWithoutPermission() {

@@ -32,7 +32,7 @@ private struct FailureLedger {
 
 @MainActor
 final class PresenceController: ObservableObject {
-    private static let checkInterval: TimeInterval = 20
+    private static let defaultCheckInterval: TimeInterval = 20
 
     /// A synthetic mouse event takes a few milliseconds to reach the system idle
     /// counter. Measured by `spikes/settling-time.swift`: reading the counter back
@@ -51,6 +51,7 @@ final class PresenceController: ObservableObject {
     private let permission: PermissionChecking
     private let settings: Settings
     private let verificationDelay: Duration
+    private let checkInterval: TimeInterval
 
     private var timer: Timer?
     private var failures = FailureLedger()
@@ -59,12 +60,14 @@ final class PresenceController: ObservableObject {
          jiggler: Jiggling,
          permission: PermissionChecking,
          settings: Settings,
-         verificationDelay: Duration = PresenceController.defaultVerificationDelay) {
+         verificationDelay: Duration = PresenceController.defaultVerificationDelay,
+         checkInterval: TimeInterval = PresenceController.defaultCheckInterval) {
         self.idleMonitor = idleMonitor
         self.jiggler = jiggler
         self.permission = permission
         self.settings = settings
         self.verificationDelay = verificationDelay
+        self.checkInterval = checkInterval
     }
 
     func refresh() {
@@ -109,7 +112,7 @@ private extension PresenceController {
     /// Scheduled in `.common` mode so the loop keeps firing while the user holds
     /// the menu bar menu open.
     func schedulePollingLoop() {
-        let timer = Timer(timeInterval: Self.checkInterval, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: checkInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.tick() }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -133,7 +136,14 @@ private extension PresenceController {
     }
 
     func nudgeAndVerify() async {
-        jiggler.jiggle()
+        /// Nothing was posted, so there is nothing to wait for and nothing to
+        /// verify: a counter that drops anyway did so for another reason - the
+        /// user returning - and must never be credited as a working nudge.
+        guard jiggler.jiggle() else {
+            failures.recordFailedNudge()
+            reportMonitoringState()
+            return
+        }
         await waitForTheSystemToRegisterTheNudge()
 
         if nudgeResetTheIdleCounter() {
