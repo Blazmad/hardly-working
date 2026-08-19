@@ -14,6 +14,46 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SITE="$PROJECT_DIR/site"
 BRANCH="gh-pages"
 URL="https://blazmad.github.io/hardly-working/"
+REPO="Blazmad/hardly-working"
+
+# Polls the Pages build until it settles. Pushing to gh-pages only queues a
+# build; on 2026-08-17 one sat in "building" for two days while this script had
+# already printed "Published", so the live site stayed stale and nothing said so.
+# A wedged build is re-requested once - that unstuck the real one in 30 seconds.
+wait_for_pages_build() {
+    local limit="${1:-40}" build_status retried=0 i=0
+    while (( i < limit )); do
+        build_status="$(gh api "repos/$REPO/pages/builds" --jq '.[0].status' 2>/dev/null)"
+        case "$build_status" in
+            built)   return 0 ;;
+            errored) echo "Pages build errored" >&2; return 1 ;;
+        esac
+        if (( i == limit / 2 )) && (( retried == 0 )); then
+            echo "==> Build still pending, re-requesting it"
+            gh api -X POST "repos/$REPO/pages/builds" >/dev/null 2>&1
+            retried=1
+        fi
+        i=$(( i + 1 ))
+        sleep 15
+    done
+    echo "Pages build never completed - the live site may be stale" >&2
+    return 1
+}
+
+# Confirms the bytes actually served match what we pushed. The build reporting
+# "built" is not proof: CDN caches, and a wrong file would still be "built".
+live_site_matches() {
+    local url="$1" reference="$2" attempts="${3:-8}" want served i
+    want="$(shasum -a 256 < "$reference" | cut -d" " -f1)"
+    for (( i = 0; i < attempts; i++ )); do
+        served="$(curl -fsS -H 'Cache-Control: no-cache' "$url?v=$i" \
+                  | shasum -a 256 | cut -d" " -f1)"
+        [[ "$served" == "$want" ]] && return 0
+        sleep 15
+    done
+    echo "Live page still differs from what was pushed" >&2
+    return 1
+}
 
 cd "$PROJECT_DIR"
 
@@ -62,6 +102,12 @@ git -C "$WORKTREE" -c user.name="$(git config user.name)" \
                    commit --quiet -m "chore(site): update the landing page"
 git -C "$WORKTREE" push --quiet origin "$BRANCH"
 
+echo "==> Waiting for the Pages build"
+wait_for_pages_build || exit 1
+
+echo "==> Checking what is actually served"
+live_site_matches "$URL" "$SITE/index.html" || exit 1
+
 echo ""
-echo "Published to $URL"
+echo "Published and verified live at $URL"
 git -C "$WORKTREE" log -1 --oneline
