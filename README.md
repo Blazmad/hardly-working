@@ -101,6 +101,8 @@ Other scripts, none of them needed for a plain build:
 | `scripts/deploy-site.sh` | publishes `site/` to the `gh-pages` branch |
 | `scripts/stats.sh` | prints download counts and repository traffic |
 
+Landing page views: [hardlyworking.goatcounter.com](https://hardlyworking.goatcounter.com) (GoatCounter, free, cookieless — not printed by `stats.sh`, which only covers what GitHub itself tracks).
+
 ### Tests
 
 ```bash
