@@ -80,8 +80,7 @@ private final class MutablePermission: PermissionChecking {
 @MainActor
 final class PresenceControllerTests: XCTestCase {
     private func makeSettings(enabled: Bool = true, threshold: Int = 240) -> Settings {
-        let suite = "com.madzar.hardlyworking.tests.\(UUID().uuidString)"
-        let settings = Settings(defaults: UserDefaults(suiteName: suite)!)
+        let settings = Settings(defaults: InMemoryDefaults())
         settings.isEnabled = enabled
         settings.idleThresholdSeconds = threshold
         return settings

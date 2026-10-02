@@ -2,18 +2,11 @@ import XCTest
 @testable import HardlyWorking
 
 final class SettingsTests: XCTestCase {
-    private var suiteName: String!
     private var defaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
-        suiteName = "com.madzar.hardlyworking.tests.\(UUID().uuidString)"
-        defaults = UserDefaults(suiteName: suiteName)
-    }
-
-    override func tearDown() {
-        defaults.removePersistentDomain(forName: suiteName)
-        super.tearDown()
+        defaults = InMemoryDefaults()
     }
 
     func testDefaultsAreEnabledAtFourMinutes() {
