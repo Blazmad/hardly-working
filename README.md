@@ -20,6 +20,8 @@ After each nudge the app waits a fraction of a second, long enough for macOS to 
 
 ## Installation
 
+With [Homebrew](https://brew.sh): `brew install --cask blazmad/tap/hardly-working` — then continue at step 2.
+
 1. Open the downloaded `HardlyWorking-*.dmg` and drag the app into Applications.
 2. Launch the app — a cup icon appears in your menu bar.
 3. **Grant the Accessibility permission** (required). On first launch the app doesn't have it yet, so the icon goes straight to the alert triangle — it won't open anything on its own. Click the icon, then "Open Accessibility Settings…" in the menu: that triggers the system prompt and opens System Settings → Privacy & Security. Landing exactly on the "Accessibility" row isn't guaranteed across macOS versions, so you may need to scroll. Tick "Hardly Working". Without this permission, macOS blocks all synthetic mouse movement.
@@ -115,6 +117,8 @@ The tests cover the pure logic (threshold, settings, state machine, self-verific
 ## Distribution
 
 The DMG is signed with a *Developer ID* certificate and **notarized by Apple**, so it installs without any security warning. `scripts/build-dmg.sh` handles this automatically when the certificate and the notarization profile are present on the machine, and skips it otherwise — so the script still works if you clone this repository without an Apple developer account.
+
+Each release must also bump `version` and `sha256` in [`Blazmad/homebrew-tap`](https://github.com/Blazmad/homebrew-tap) (`Casks/hardly-working.rb`); `shasum -a 256 dist/HardlyWorking-<version>.dmg` gives the hash.
 
 ## History
 
