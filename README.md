@@ -119,3 +119,7 @@ The DMG is signed with a *Developer ID* certificate and **notarized by Apple**, 
 ## History
 
 Replaces `teams-presence`, an earlier bash-script version. This native v2 removes its three weaknesses: a dependency on Homebrew (`cliclick`), an Accessibility permission that broke on every update, and a workaround for the TCC protection on the `~/Documents` folder.
+
+## License
+
+[MIT](LICENSE) — free to use, modify and redistribute.
