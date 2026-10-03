@@ -189,11 +189,13 @@
   .caveat code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.95em;
+    color: var(--ink);
     background: var(--amber-soft);
     padding: 1px 6px;
     border-radius: 5px;
     white-space: nowrap;
   }
+  .caveat.brew { max-width: min(100%, 64ch); }
   @media (max-width: 480px) { .caveat code { font-size: 0.82em; padding: 1px 4px; } }
 
   /* -- The joke that doubles as the demo -------------------- */
