@@ -20,7 +20,7 @@ After each nudge the app waits a fraction of a second, long enough for macOS to 
 
 ## Installation
 
-With [Homebrew](https://brew.sh): `brew install --cask blazmad/tap/hardly-working` — then continue at step 2.
+With [Homebrew](https://brew.sh): `brew install --cask blazmad/tap/hardly-working` replaces step 1 — then continue at step 2.
 
 1. Open the downloaded `HardlyWorking-*.dmg` and drag the app into Applications.
 2. Launch the app — a cup icon appears in your menu bar.
