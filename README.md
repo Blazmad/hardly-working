@@ -12,6 +12,10 @@ A small macOS menu bar app that stops Teams (or Slack, Discord…) from marking 
 
 **[Download for macOS →](https://blazmad.github.io/hardly-working/)**
 
+<p align="center">
+  <img src="assets/menu.png" alt="The Hardly Working menu: Active, idle threshold, launch at login" width="320">
+</p>
+
 ## How it works
 
 Teams reads the macOS idle timer: the time since your last keyboard or mouse input. Hardly Working checks that same timer every 20 seconds and, as soon as it passes your chosen threshold, moves the cursor by one pixel and puts it straight back — imperceptible, never a click, and no interference at all if you happen to be using the mouse.
