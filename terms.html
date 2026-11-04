@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Same cookieless page count as the landing page, disclosed in privacy.html. -->
+<script data-goatcounter="https://hardlyworking.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+
+<style>
+  :root {
+    --amber: #D8792E; --amber-soft: rgba(216,121,46,.12);
+    --ink: #1E1813; --ink-soft: #6E6259; --ink-faint: #9C9089;
+    --ground: #FDFBF8; --line: #EADFD2;
+    --display: ui-serif, "New York", Iowan Old Style, Palatino, Georgia, serif;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --amber: #E8944A; --amber-soft: rgba(232,148,74,.16);
+      --ink: #F4EDE5; --ink-soft: #A99C90; --ink-faint: #7C7168;
+      --ground: #14110E; --line: #2E2721;
+    }
+  }
+  :root[data-theme="dark"] {
+    --amber: #E8944A; --amber-soft: rgba(232,148,74,.16);
+    --ink: #F4EDE5; --ink-soft: #A99C90; --ink-faint: #7C7168;
+    --ground: #14110E; --line: #2E2721;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--ui); font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 26px 0 0; }
+  .brand { display: flex; align-items: center; gap: 11px; font-weight: 590; letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
+  .brand svg { display: block; border-radius: 24%; }
+  h1 { font-family: var(--display); font-size: clamp(34px, 6vw, 48px); line-height: 1.1; letter-spacing: -.025em; font-weight: 600; margin: 64px 0 6px; }
+  .updated { color: var(--ink-faint); font-size: 14px; margin: 0 0 40px; }
+  h2 { font-family: var(--display); font-size: 22px; letter-spacing: -.015em; font-weight: 600; margin: 36px 0 8px; }
+  p { margin: 0 0 14px; color: var(--ink-soft); }
+  a { color: var(--amber); overflow-wrap: anywhere; }
+  a:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+  footer {
+    margin-top: 80px; padding: 30px 0 48px; border-top: 1px solid var(--line);
+    display: flex; gap: 18px; flex-wrap: wrap; color: var(--ink-faint); font-size: 13.5px;
+  }
+  footer a { color: var(--ink-soft); text-decoration: none; }
+  footer a:hover { color: var(--amber); }
+</style>
+<title>Terms of Service · Hardly Working</title>
+<meta name="description" content="Terms of use for Hardly Working, free and open-source software under the MIT License.">
+</head>
+<body>
+<div class="shell">
+  <nav>
+    <a class="brand" href="./">
+      <svg width="26" height="26" viewBox="0 0 1024 1024" aria-hidden="true">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0" stop-color="#F0A857"/><stop offset="1" stop-color="#B4541A"/>
+          </linearGradient>
+        </defs>
+        <rect width="1024" height="1024" rx="232" fill="url(#g)"/>
+        <path d="M 268 692 L 756 692 C 756 742 700 764 512 764 C 324 764 268 742 268 692 Z" fill="#FFFCF7"/>
+        <path d="M 668 486 A 86 86 0 1 1 668 622" fill="none" stroke="#FFFCF7" stroke-width="46" stroke-linecap="round"/>
+        <path d="M 342 452 L 682 452 L 656 640 C 650 678 622 700 584 700 L 440 700 C 402 700 374 678 368 640 Z" fill="#FFFCF7"/>
+        <ellipse cx="512" cy="454" rx="132" ry="20" fill="#6B3410"/>
+      </svg>
+      Hardly&nbsp;Working
+    </a>
+  </nav>
+
+<main>
+<h1>Terms of Service</h1>
+<p class="updated">Last updated: November 4, 2026</p>
+<p>Hardly Working is free and open-source software published by Blazmad under the <a href="https://github.com/Blazmad/hardly-working/blob/main/LICENSE">MIT License</a>. You may use, copy, modify and share it, including for commercial use, as long as you keep the copyright and license notice.</p>
+
+<h2>No warranty</h2>
+<p>The app is provided "as is", without warranty of any kind. The author is not liable for any damage or loss resulting from its use.</p>
+
+<h2>Your responsibility</h2>
+<p>The app moves the cursor by one pixel after a period of inactivity. Whether you may use it on a work computer depends on your employer's rules: check them first. While the app is active, your Mac does not go to sleep or lock by itself, so lock it when you leave it.</p>
+
+<h2>No account, no payment</h2>
+<p>There is nothing to buy and no account to create.</p>
+
+<h2>Changes</h2>
+<p>These terms may change with new versions of the app. The date at the top shows the latest update.</p>
+
+<h2>Contact</h2>
+<p>Blazmad, <span class="mail" data-user="hardlyworking.mac" data-domain="outlook.com">hardlyworking.mac [at] outlook.com</span>.
+Bugs and feature requests: <a href="https://github.com/Blazmad/hardly-working/issues">GitHub issues</a>.</p>
+</main>
+
+  <footer>
+    <a href="./">Home</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+    <a href="https://github.com/Blazmad/hardly-working">Source on GitHub</a>
+  </footer>
+</div>
+
+<script>
+  // The address is assembled here so it never sits whole in the HTML for scrapers.
+  document.querySelectorAll('.mail').forEach(function (el) {
+    var address = el.dataset.user + '@' + el.dataset.domain;
+    var link = document.createElement('a');
+    link.href = 'mailto:' + address;
+    link.textContent = address;
+    el.replaceWith(link);
+  });
+</script>
+</body>
+</html>
